@@ -22,50 +22,23 @@ import {
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
 } from 'sequelize';
-import { Price, PriceInterface } from './Price';
+import { Price } from './Price';
 import {
 	validateStringField,
 } from '../helper';
-import logger from '../../logger';
-import db from '../db';
 import { OrderItem } from './OrderItem';
-import { Discount, DiscountInterface } from './Discount';
+import { Discount } from './Discount';
 import { ProductPrice } from './ProductPrice';
 import { Category } from './Category';
-import { Image, ImageInterface } from './Image';
-import { ProductImage } from './ProductImage';
-
-interface ProductBaseInterface {
-	id: string;
-
-	name: string;
-	description: string;
-	stock: number;
-
-	createdAt: Date;
-	updatedAt: Date;
-	deletedAt?: Date;
-}
-
-interface ProductAssociationsInterface {
-	categories: string[];
-	price?: PriceInterface | string;
-	prices: PriceInterface[] | string[];
-	discount?: DiscountInterface | string;
-	images: ImageInterface[] | string[];
-	thumbnail?: ImageInterface | string;
-}
-
-export interface ProductInterface
-	extends ProductBaseInterface,
-	ProductAssociationsInterface { }
+import { Image } from './Image';
 
 type ProductAssociations =
 	| 'productPrices'
 	| 'orderItems'
 	| 'discount'
 	| 'categories'
-	| 'productImages';
+	| 'thumbnail'
+	| 'images';
 
 export class Product extends Model<
 	InferAttributes<Product, { omit: ProductAssociations }>,
@@ -132,31 +105,36 @@ export class Product extends Model<
 	declare setDiscount: BelongsToSetAssociationMixin<Discount, string>;
 	declare createDiscount: BelongsToCreateAssociationMixin<Discount>;
 
-	// Product belongsToMany Prices
-	declare productImages?: NonAttribute<ProductImage[]>;
-	declare getProductImages: HasManyGetAssociationsMixin<ProductImage>;
-	declare setProductImages: HasManySetAssociationsMixin<ProductImage, string>;
-	declare addProductImage: HasManyAddAssociationMixin<ProductImage, string>;
-	declare addProductImages: HasManyAddAssociationsMixin<ProductImage, string>;
-	declare createProductImage: HasManyCreateAssociationMixin<ProductImage>;
-	declare removeProductImage: HasManyRemoveAssociationMixin<
-		ProductImage,
+	declare thumbnail?: NonAttribute<Image>;
+	declare getThumbnail: BelongsToGetAssociationMixin<Image>;
+	declare setThumbnail: BelongsToSetAssociationMixin<Image, string>;
+	declare createThumbnail: BelongsToCreateAssociationMixin<Image>;
+
+	declare images?: NonAttribute<Image[]>;
+	declare getImages: HasManyGetAssociationsMixin<Image>;
+	declare setImages: HasManySetAssociationsMixin<Image, string>;
+	declare addImage: HasManyAddAssociationMixin<Image, string>;
+	declare addImages: HasManyAddAssociationsMixin<Image, string>;
+	declare createImage: HasManyCreateAssociationMixin<Image>;
+	declare removeImage: HasManyRemoveAssociationMixin<
+		Image,
 		string
 	>;
-	declare removeProductImages: HasManyRemoveAssociationsMixin<
-		ProductImage,
+	declare removeImages: HasManyRemoveAssociationsMixin<
+		Image,
 		string
 	>;
-	declare hasProductImage: HasManyHasAssociationMixin<ProductImage, string>;
-	declare hasProductImages: HasManyHasAssociationsMixin<ProductImage, string>;
-	declare countProductImages: HasManyCountAssociationsMixin;
+	declare hasImage: HasManyHasAssociationMixin<Image, string>;
+	declare hasImages: HasManyHasAssociationsMixin<Image, string>;
+	declare countImages: HasManyCountAssociationsMixin;
 
 	declare static associations: {
 		categories: Association<Product, Category>;
 		productPrices: Association<Product, ProductPrice>;
 		orderItems: Association<Product, OrderItem>;
 		discount: Association<Product, Discount>;
-		productImages: Association<Product, ProductImage>;
+		thumbnail: Association<Product, Image>;
+		images: Association<Product, Image>;
 	};
 
 	static initModel(sequelize: Sequelize): typeof Product {
@@ -240,9 +218,14 @@ export class Product extends Model<
 			onDelete: 'SET NULL',
 		});
 
-		Product.hasMany(ProductImage, {
-			foreignKey: 'productId',
-			onDelete: 'CASCADE',
+		Product.belongsTo(Image, {
+			foreignKey: 'thumbnailId',
+			onDelete: 'SET NULL'
+		});
+
+		Product.hasMany(Image, {
+			foreignKey: 'imageId',
+			onDelete: 'SET NULL',
 		});
 	}
 
@@ -254,63 +237,6 @@ export class Product extends Model<
 		})
 
 		return product.toJSON()
-	}
-
-	public async getImages() {
-		const result = await this.getProductImages();
-
-		return Promise.all(
-			result.map((pi) => {
-				return pi.getImage();
-			})
-		);
-	}
-
-	public async getThumbnail(): Promise<Image | null> {
-		const images = await this.getProductImages({
-			where: {
-				isThumbnail: true,
-			},
-		});
-
-		if (images.length === 0 || images.length > 1) {
-			return null;
-		}
-
-		const thumbnail = images[0];
-
-		return thumbnail.getImage();
-	}
-
-	public async setThumbnail(
-		image: Image,
-		options?: { transaction?: Transaction }
-	): Promise<void> {
-		const images = await this.getProductImages({
-			transaction: options?.transaction,
-		});
-
-		const targetImage = images.find((imageInc) => imageInc.id === image.id);
-		if (!targetImage) {
-			throw new Error(
-				`Image with ID ${image.id} is not associated with Product ID ${this.id}`
-			);
-		}
-
-		if (targetImage.isThumbnail) {
-			return;
-		}
-
-		// set all prices to inactive
-		await Promise.all(
-			images.map((imageInc) => {
-				imageInc.isThumbnail = false;
-			})
-		);
-
-		await targetImage.update({ isThumbnail: true });
-
-		await targetImage.save();
 	}
 
 	public async getPrices() {
@@ -368,43 +294,5 @@ export class Product extends Model<
 		await targetPrice.update({ isActive: true });
 
 		await targetPrice.save();
-	}
-
-	public async delete(options?: {
-		force?: boolean;
-		transaction?: Transaction;
-	}): Promise<void> {
-		try {
-			const force = options?.force ?? false;
-			const transaction = options?.transaction;
-
-			if (force) {
-				if (transaction) {
-					await this.cleanUp({ force, transaction });
-				} else {
-					await db.transaction(async (transaction: Transaction) => {
-						await this.cleanUp({ force, transaction });
-					});
-				}
-			} else {
-				if (transaction) {
-					await this.destroy({ transaction });
-				} else {
-					await db.transaction(async (transaction: Transaction) => {
-						await this.destroy({ transaction });
-					});
-				}
-			}
-		} catch (err: unknown) {
-			logger.error('Delete product error, ', err);
-			throw err;
-		}
-	}
-
-	public async cleanUp(options: {
-		force: boolean;
-		transaction: Transaction;
-	}): Promise<void> {
-		await this.destroy(options);
 	}
 }

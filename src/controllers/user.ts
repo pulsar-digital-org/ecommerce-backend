@@ -1,24 +1,16 @@
-import { User, UserInterface } from '../db/models/User';
+import { User } from '../db/models/User';
 import { generateHash } from './auth';
 
 import { AlreadyExistsError, BadRequestError, NotFoundError } from '../errors';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { UserRole } from '../db/types';
-import logger from '../logger';
+import { UserType } from '../types/model';
+import db from '../db/db';
+import { UserCreation, UserModifiable } from '../types/user';
 
-/** Create new user or update an existing user with email, username and password.
- *
- * @throws {BadRequestError} If credentials are not provided or user is already registered (aka. not guest) or if validation fails.
- * @throws {AlreadyExistsError} If user with the same username or email already exists.
- *
- * @returns {UserInterface} Newly created user or updated user.
- */
-async function userCreate(
-  username: string,
-  email: string,
-  password: string,
-  existing_user?: User
-): Promise<UserInterface> {
+async function userCreate(data: UserCreation, existing_user?: User): Promise<UserType> {
+  const { username, email, plainPassword: password } = data;
+
   if (!username || !email || !password)
     throw new BadRequestError('Credentials not provided');
 
@@ -44,22 +36,11 @@ async function userCreate(
     }
 
     user = existing_user;
-    userUpdate(user, user, {
-      username: username,
-      email: email,
-      passwordHash: hash,
-      role: UserRole.user
-    });
 
-    return user.data();
+    user.set({ username, email, passwordHash: hash, role: UserRole.user });
+  } else {
+    user = User.build({ username, email, passwordHash: hash, role: UserRole.user });
   }
-
-  user = User.build({
-    username: username,
-    email: email,
-    passwordHash: hash,
-    role: UserRole.user
-  });
 
   try {
     await user.validate();
@@ -80,9 +61,8 @@ async function userCreateGuest() {
   try {
     await user.validate();
   } catch (err) {
-    logger.error(err);
     throw new BadRequestError(
-      `Invalid user data, either username, email or password is not valid ${err}`
+      `Something went wrong ${err}`
     );
   }
 
@@ -91,19 +71,8 @@ async function userCreateGuest() {
   return user;
 }
 
-/**
- * This function retrieves a User instance by its id.
- *
- * @throws NotFoundError If no user with provided ID is found
- *
- * @param id - User id
- *
- * @returns User
- */
-async function userGet(id: string) {
-  // TODO: validate uuid(sanitize)?
-
-  const user = await User.findByPk(id);
+async function userGet(userId: string, options?: { transaction?: Transaction }) {
+  const user = await User.findByPk(userId, options);
   if (!user) {
     throw new NotFoundError('User not found');
   }
@@ -111,21 +80,13 @@ async function userGet(id: string) {
   return user;
 }
 
-/**
- * This function retrieves multiple users based on the provided options which are partial matches.
- *
- * @throws NotFoundError
- *
- * @param limit - How many users to return, defaults to 10, max is 20
- * @param options - Partial options to filter users by
- *
- * @returns - Array of users matched by options
- */
 async function userGetMultiple(
   options: { page?: number; size?: number } = {},
   filters: { [key: string]: string | undefined | null } = {}
-) {
+): Promise<{ users: UserType[], total: number, page: number, size: number }> {
   const { page = 1, size = 10 } = options;
+
+  if (page < 1 || size < 1) throw new BadRequestError("Invalid pagination params");
 
   const offset = (page - 1) * size;
 
@@ -139,79 +100,56 @@ async function userGetMultiple(
 
   const conditions = filteredEntries.map(([key, value]) => ({
     [key]: {
-      [Op.like]: `%${value}%`
-    }
+      [Op.iLike]: `%${value}%`,
+    },
   }));
 
   const queryOptions = {
     limit: Math.min(size, 10),
     offset,
-    where: conditions.length > 0 ? { [Op.and]: conditions } : {}
+    where: conditions.length > 0 ? { [Op.and]: conditions } : {},
   };
 
-  const users = await User.findAll({
+  const { rows, count } = await User.findAndCountAll({
     ...queryOptions,
-    order: [['createdAt', 'DESC']]
+    order: [['createdAt', 'DESC']],
   });
 
-  return Promise.all(users.map(async (user) => user.data()));
+  const users = await Promise.all(rows.map(async (user) => user.data()));
+
+  return { users, total: count, page, size };
 }
 
-/**
- * Update user.
- *
- * @throws BadRequestError If user is not found
- *
- * @param user - The user model instance to update
- * @param updateData - An object containing the fields to update on the user
- *
- * @returns The updated user data
- */
+// userRequested is the user that requested the update
 async function userUpdate(
-  userRequestingUpdate: User,
-  userToUpdate: User,
-  updateData: any
+  userRequested: User,
+  user: User,
+  data: UserModifiable
 ) {
-  userToUpdate.set({
-    username: updateData.username,
-    email: updateData.email
-  });
+  const { role, ...userData } = data;
+
+  user.set(userData);
 
   // Possible token update with admin privileges
-  if (userRequestingUpdate.isOwner()) {
-    if (
-      updateData.role &&
-      updateData.role in UserRole &&
-      userRequestingUpdate.id !== userToUpdate.id
-    ) {
-      userToUpdate.set({
-        role: updateData.role as UserRole
-      });
-    }
+  if (userRequested.isOwner() && role && userRequested.id !== user.id) {
+    user.set({ role });
   }
 
   try {
-    await userToUpdate.validate();
+    await user.validate();
   } catch (err) {
-    throw new BadRequestError('Validation failed');
+    throw new BadRequestError('User validation failed');
   }
 
-  await userToUpdate.save();
+  await user.save();
 
-  return userToUpdate.data();
+  return user.data();
 }
 
-/**
- * TODO: implement soft delete
- * Hard delete user.
- *
- * @param user - User to be deleted
- * @param force - TODO:
- *
- * @returns Void, throws if errors
- */
 async function userDelete(user: User) {
-  await user.delete();
+  await db.transaction(async (t: Transaction) => {
+    await user.destroy({ transaction: t });
+  })
 }
 
 export {

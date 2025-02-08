@@ -8,10 +8,9 @@ export const productModifiableSchema = z.object({
 	description: z.string().optional(),
 	stock: z.number().optional(),
 
-	images: z.array(z.string()).optional(),
-	categories: z.array(z.string()).min(1)
+	images: z.array(z.string().uuid()).optional(),
+	thumbnail: z.string().uuid().min(1),
+	categories: z.array(z.string().uuid()).min(1)
 });
-
-export const productBaseSchema = productModifiableSchema;
 
 export type ProductModifiable = z.infer<typeof productModifiableSchema>;

@@ -30,7 +30,7 @@ import {
 import logger from '../../logger';
 import db from '../db';
 import { AddressType, addressTypes } from '../types';
-import { User, UserInterface } from './User';
+import { User } from './User';
 import { BadRequestError } from '../../errors';
 import { Order, OrderInterface } from './Order';
 
@@ -57,7 +57,7 @@ interface AddressBaseInterface {
 }
 
 interface AddressAssociationsInterface {
-	user: UserInterface | string;
+	user: any | string;
 	orders: OrderInterface[] | string[];
 }
 
@@ -303,7 +303,7 @@ export class Address extends Model<
 		}, {}) as AddressBaseInterface;
 
 		const [user, orders] = await Promise.all([
-			fetchSingleData<UserInterface, User>(() => this.getUser(), dto),
+			fetchSingleData<any, User>(() => this.getUser(), dto),
 			fetchMultiData<OrderInterface, Order>(() => this.getOrders(), dto)
 		]);
 

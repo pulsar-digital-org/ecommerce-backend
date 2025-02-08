@@ -29,7 +29,7 @@ async function categoryCreate(data: CategoryModifiable): Promise<CategoryType> {
 }
 
 async function categoryGet(categoryId: string, options?: { transaction?: Transaction }) {
-	const category = await Category.findByPk(categoryId, { transaction: options?.transaction });
+	const category = await Category.findByPk(categoryId, options);
 	if (!category) {
 		throw new BadRequestError('Category not found');
 	}

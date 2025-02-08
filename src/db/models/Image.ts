@@ -11,16 +11,11 @@ import {
 	BelongsToCreateAssociationMixin,
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
-	HasOneCreateAssociationMixin,
-	HasOneGetAssociationMixin,
-	HasOneSetAssociationMixin,
 } from 'sequelize';
 import { fetchSingleData, validateStringField } from '../helper';
 import logger from '../../logger';
 import db from '../db';
-import { User, UserInterface } from './User';
-import { ProductImage } from './ProductImage';
-import { ProductInterface } from './Product';
+import { User } from './User';
 
 interface ImageBaseInterface {
 	id: string;
@@ -37,15 +32,14 @@ interface ImageBaseInterface {
 }
 
 interface ImageAssociationsInterface {
-	user: UserInterface | string;
-	product?: ProductInterface | string;
+	user: any | string;
 }
 
 export interface ImageInterface
 	extends ImageBaseInterface,
 	ImageAssociationsInterface { }
 
-type ImageAssociations = 'user' | 'productImage';
+type ImageAssociations = 'user';
 
 export class Image extends Model<
 	InferAttributes<Image, { omit: ImageAssociations }>,
@@ -68,11 +62,6 @@ export class Image extends Model<
 	declare getUser: BelongsToGetAssociationMixin<User>;
 	declare setUser: BelongsToSetAssociationMixin<User, string>;
 	declare createUser: BelongsToCreateAssociationMixin<User>;
-
-	declare productImage?: NonAttribute<ProductImage>;
-	declare getProductImage: HasOneGetAssociationMixin<ProductImage>;
-	declare setProductImage: HasOneSetAssociationMixin<ProductImage, string>;
-	declare createProductImage: HasOneCreateAssociationMixin<ProductImage>;
 
 	declare static associations: {
 		user: Association<Image, User>;
@@ -139,10 +128,6 @@ export class Image extends Model<
 			foreignKey: 'userId',
 			onDelete: 'CASCADE',
 		});
-
-		Image.hasOne(ProductImage, {
-			foreignKey: 'imageId',
-		});
 	}
 
 	public async data(dto: boolean = true): Promise<ImageInterface> {
@@ -165,7 +150,7 @@ export class Image extends Model<
 		}, {}) as ImageBaseInterface;
 
 		const [user] = await Promise.all([
-			fetchSingleData<UserInterface, User>(() => this.getUser(), dto),
+			fetchSingleData<any, User>(() => this.getUser(), dto),
 		]);
 
 		if (user === undefined) {

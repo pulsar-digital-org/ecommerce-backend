@@ -39,7 +39,7 @@ import { OrderItem, OrderItemInterface } from './OrderItem';
 import logger from '../../logger';
 import db from '../db';
 import { AddressType, OrderStatus, orderStatuses } from '../types';
-import { User, UserInterface } from './User';
+import { User } from './User';
 import { Address, AddressInterface } from './Address';
 import { Discount, DiscountInterface } from './Discount';
 import { Payment, PaymentInterface } from './Payment';
@@ -57,7 +57,7 @@ interface OrderBaseInterface {
 }
 
 interface OrderAssociationsInterface {
-	user: UserInterface | string;
+	user: any | string;
 	orderItems: OrderItemInterface[] | string[];
 	billingAddress?: AddressInterface | string;
 	shippingAddress?: AddressInterface | string;
@@ -67,7 +67,7 @@ interface OrderAssociationsInterface {
 
 export interface OrderInterface
 	extends OrderBaseInterface,
-		OrderAssociationsInterface {}
+	OrderAssociationsInterface { }
 
 type OrderAssociations = 'orderItems' | 'user' | 'addresses';
 
@@ -233,7 +233,7 @@ export class Order extends Model<
 			discount,
 			payment
 		] = await Promise.all([
-			fetchSingleData<UserInterface, User>(() => this.getUser(), dto),
+			fetchSingleData<any, User>(() => this.getUser(), dto),
 			fetchMultiData<OrderItemInterface, OrderItem>(
 				() => this.getOrderItems(),
 				dto

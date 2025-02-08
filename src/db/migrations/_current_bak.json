@@ -114,11 +114,6 @@
                     "field": "name",
                     "seqType": "Sequelize.STRING"
                 },
-                "thumbnailUrl": {
-                    "allowNull": true,
-                    "field": "thumbnailUrl",
-                    "seqType": "Sequelize.STRING"
-                },
                 "createdAt": {
                     "field": "createdAt",
                     "seqType": "Sequelize.DATE"
@@ -237,6 +232,17 @@
                     "allowNull": true,
                     "field": "deletedAt",
                     "seqType": "Sequelize.DATE"
+                },
+                "imageId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Categories",
+                        "key": "id"
+                    },
+                    "onDelete": "SET NULL",
+                    "onUpdate": "CASCADE",
+                    "field": "imageId",
+                    "seqType": "Sequelize.UUID"
                 },
                 "userId": {
                     "allowNull": true,
@@ -799,5 +805,5 @@
     "path": "/home/xd/Documents/_pulsar/customer_projects/nicolaspanco/web/backend/src/db/migrations/_current.json",
     "backupPath": "/home/xd/Documents/_pulsar/customer_projects/nicolaspanco/web/backend/src/db/migrations/_current_bak.json",
     "exists": true,
-    "revision": 8
+    "revision": 9
 }

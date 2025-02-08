@@ -7,7 +7,6 @@ import {
 	Model,
 	NonAttribute,
 	Sequelize,
-	Transaction,
 	HasManyAddAssociationMixin,
 	HasManyAddAssociationsMixin,
 	HasManyCountAssociationsMixin,
@@ -19,39 +18,13 @@ import {
 	HasManyRemoveAssociationsMixin,
 	HasManySetAssociationsMixin
 } from 'sequelize';
-import { Order, OrderInterface } from './Order';
-import logger from '../../logger';
-import db from '../db';
+import { Order } from './Order';
 import {
-	fetchMultiData,
-	fetchSingleData,
 	validateStringField
 } from '../helper';
 import { OrderStatus, UserRole, userRoles } from '../types';
-import { Address, AddressInterface } from './Address';
-
-interface UserBaseInterface {
-	id: string;
-
-	role: UserRole;
-
-	username?: string;
-	email?: string;
-
-	createdAt: Date;
-	updatedAt: Date;
-	deletedAt?: Date;
-}
-
-interface UserAssociationsInterface {
-	orders: OrderInterface[] | string[];
-	activeOrder?: OrderInterface | string;
-	addresses: AddressInterface[] | string[];
-}
-
-export interface UserInterface
-	extends UserBaseInterface,
-		UserAssociationsInterface {}
+import { Address } from './Address';
+import { UserType } from '../../types/model';
 
 type UserAssociations = 'orders' | 'addresses';
 
@@ -161,73 +134,25 @@ export class User extends Model<
 		// User has no deps
 
 		User.hasMany(Order, {
-			foreignKey: 'userId'
+			foreignKey: 'userId',
+			as: 'orders'
 		});
 
 		User.hasMany(Address, {
-			foreignKey: 'userId'
+			foreignKey: 'userId',
+			as: 'addresses'
 		});
 	}
 
-	public async data(dto: boolean = true): Promise<UserInterface> {
-		const fields = [
-			'id',
-			'role',
-			'username',
-			'email',
-			'createdAt',
-			'updatedAt'
-		];
+	public async data(dto: boolean = true): Promise<UserType> {
+		const user = await this.reload({
+			include: [
+				{ model: Order, as: 'orders' },
+				{ model: Address, as: 'addresses' },
+			]
+		});
 
-		const base_data = fields.reduce((acc, field) => {
-			return {
-				...acc,
-				[field]: this[field as keyof User]
-			};
-		}, {}) as UserBaseInterface;
-
-		const [orders, activeOrder, addresses] = await Promise.all([
-			fetchMultiData<OrderInterface, Order>(
-				() => this.getOrders({ order: [['createdAt', 'DESC']] }),
-				dto
-			),
-			fetchSingleData<OrderInterface, Order>(() => this.getActiveOrder(), dto),
-			fetchMultiData<AddressInterface, Address>(() => this.getAddresses(), dto)
-		]);
-
-		const associated_data: UserAssociationsInterface = {
-			orders,
-			activeOrder,
-			addresses
-		};
-
-		return {
-			...base_data,
-
-			...associated_data
-		};
-	}
-
-	public async delete(options?: { transaction?: Transaction }): Promise<void> {
-		try {
-			if (options?.transaction) {
-				await this.cleanUp({ force: true, transaction: options.transaction });
-			} else {
-				await db.transaction(async transaction => {
-					await this.cleanUp({ force: true, transaction });
-				});
-			}
-		} catch (err: unknown) {
-			logger.error('Delete user error, ', err);
-			throw err;
-		}
-	}
-
-	public async cleanUp(options: {
-		force: boolean;
-		transaction: Transaction;
-	}): Promise<void> {
-		await this.destroy(options);
+		return user.toJSON();
 	}
 
 	public getHash() {

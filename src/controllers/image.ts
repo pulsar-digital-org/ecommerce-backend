@@ -84,18 +84,7 @@ async function imageGet(
 	imageId: string,
 	options?: { transaction: Transaction }
 ) {
-	let image: Image | null;
-	try {
-		image = await Image.findOne({
-			where: {
-				id: imageId,
-			},
-			paranoid: false,
-			...options,
-		});
-	} catch (err) {
-		throw new NotFoundError("Couldn't find image");
-	}
+	const image = await Image.findByPk(imageId, options);
 	if (!image) {
 		throw new NotFoundError("Couldn't find image");
 	}
@@ -105,7 +94,7 @@ async function imageGet(
 
 // todo: add deletion from bucket to hooks in Model
 async function imageDelete(image: Image, force: boolean = false) {
-	await image.delete({ force });
+	await image.delete();
 }
 
 export { imageCreate, imageGet, imageDelete };

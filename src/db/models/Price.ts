@@ -17,7 +17,7 @@ import {
 } from 'sequelize';
 import logger from '../../logger';
 import db from '../db';
-import { Product, ProductInterface } from './Product';
+import { Product } from './Product';
 import { Discount, DiscountInterface } from './Discount';
 import { Payment, PaymentInterface } from './Payment';
 import { PriceableType } from '../types';
@@ -36,12 +36,12 @@ interface PriceBaseInterface {
 }
 
 interface PriceAssociationsInterface {
-	priceable: ProductInterface | DiscountInterface | PaymentInterface | string;
+	priceable: any | DiscountInterface | PaymentInterface | string;
 }
 
 export interface PriceInterface
 	extends PriceBaseInterface,
-		PriceAssociationsInterface {}
+	PriceAssociationsInterface { }
 
 type PriceAssociations = 'productPrice' | 'discount' | 'payment';
 
@@ -183,7 +183,7 @@ export class Price extends Model<
 
 		const [priceable] = await Promise.all([
 			fetchSingleData<
-				ProductInterface | PaymentInterface | DiscountInterface,
+				any | PaymentInterface | DiscountInterface,
 				Product | Payment | Discount
 			>(() => this.getPriceable(), dto)
 		]);

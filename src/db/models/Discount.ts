@@ -27,7 +27,7 @@ import db from '../db';
 import { DiscountType, discountTypes, PriceableType } from '../types';
 import { BadRequestError } from '../../errors';
 import { Order, OrderInterface } from './Order';
-import { Product, ProductInterface } from './Product';
+import { Product } from './Product';
 import { Price, PriceInterface } from './Price';
 import { fetchSingleData, fetchMultiData } from '../helper';
 
@@ -45,12 +45,12 @@ interface DiscountBaseInterface {
 interface DiscountAssociationsInterface {
 	price: PriceInterface | string;
 	orders: OrderInterface[] | string[];
-	products: ProductInterface[] | string[];
+	products: any[] | string[];
 }
 
 export interface DiscountInterface
 	extends DiscountBaseInterface,
-		DiscountAssociationsInterface {}
+	DiscountAssociationsInterface { }
 
 type DiscountAssociations = 'orders' | 'products' | 'price';
 
@@ -217,7 +217,7 @@ export class Discount extends Model<
 		const [price, orders, products] = await Promise.all([
 			fetchSingleData<PriceInterface, Price>(() => this.getPrice(), dto),
 			fetchMultiData<OrderInterface, Order>(() => this.getOrders(), dto),
-			fetchMultiData<ProductInterface, Product>(() => this.getProducts(), dto)
+			fetchMultiData<any, Product>(() => this.getProducts(), dto)
 		]);
 
 		if (price === undefined) {
@@ -227,7 +227,7 @@ export class Discount extends Model<
 		const associated_data: DiscountAssociationsInterface = {
 			price,
 			orders: orders as OrderInterface[] | string[],
-			products: products as ProductInterface[] | string[]
+			products: products as any[] | string[]
 		};
 
 		return {

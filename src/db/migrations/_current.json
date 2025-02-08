@@ -553,6 +553,17 @@
                     "onUpdate": "CASCADE",
                     "field": "discountId",
                     "seqType": "Sequelize.UUID"
+                },
+                "thumbnailId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Images",
+                        "key": "id"
+                    },
+                    "onDelete": "SET NULL",
+                    "onUpdate": "CASCADE",
+                    "field": "thumbnailId",
+                    "seqType": "Sequelize.UUID"
                 }
             },
             "indexes": []
@@ -592,17 +603,6 @@
                     "field": "deletedAt",
                     "seqType": "Sequelize.DATE"
                 },
-                "imageId": {
-                    "allowNull": true,
-                    "references": {
-                        "model": "Images",
-                        "key": "id"
-                    },
-                    "onDelete": "SET NULL",
-                    "onUpdate": "CASCADE",
-                    "field": "imageId",
-                    "seqType": "Sequelize.UUID"
-                },
                 "productId": {
                     "allowNull": true,
                     "references": {
@@ -612,6 +612,17 @@
                     "onDelete": "CASCADE",
                     "onUpdate": "CASCADE",
                     "field": "productId",
+                    "seqType": "Sequelize.UUID"
+                },
+                "imageId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Images",
+                        "key": "id"
+                    },
+                    "onDelete": "CASCADE",
+                    "onUpdate": "CASCADE",
+                    "field": "imageId",
                     "seqType": "Sequelize.UUID"
                 }
             },
@@ -802,8 +813,8 @@
             "indexes": []
         }
     },
-    "path": "/home/xd/Documents/_pulsar/customer_projects/nicolaspanco/web/backend/src/db/migrations/_current.json",
-    "backupPath": "/home/xd/Documents/_pulsar/customer_projects/nicolaspanco/web/backend/src/db/migrations/_current_bak.json",
+    "path": "/home/xd/Documents/_pulsar/internal/ecommerce-backend/src/db/migrations/_current.json",
+    "backupPath": "/home/xd/Documents/_pulsar/internal/ecommerce-backend/src/db/migrations/_current_bak.json",
     "exists": true,
-    "revision": 9
+    "revision": 10
 }

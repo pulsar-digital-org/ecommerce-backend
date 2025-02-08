@@ -12,7 +12,7 @@ import {
   BelongsToSetAssociationMixin,
   BelongsToCreateAssociationMixin
 } from 'sequelize';
-import { Product, ProductInterface } from './Product';
+import { Product } from './Product';
 import { Order, OrderInterface } from './Order';
 import logger from '../../logger';
 import db from '../db';
@@ -31,12 +31,12 @@ interface OrderItemBaseInterface {
 
 interface OrderItemAssociationsInterface {
   order: OrderInterface | string;
-  product: ProductInterface | string;
+  product: any | string;
 }
 
 export interface OrderItemInterface
   extends OrderItemBaseInterface,
-    OrderItemAssociationsInterface {}
+  OrderItemAssociationsInterface { }
 
 type OrderItemAssociations = 'product' | 'order';
 
@@ -142,7 +142,7 @@ export class OrderItem extends Model<
 
     const [order, product] = await Promise.all([
       fetchSingleData<OrderInterface, Order>(() => this.getOrder(), dto),
-      fetchSingleData<ProductInterface, Product>(() => this.getProduct(), dto)
+      fetchSingleData<any, Product>(() => this.getProduct(), dto)
     ]);
 
     if (!order) {

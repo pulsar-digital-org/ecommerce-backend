@@ -1,20 +1,19 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { compare, genSalt, hash } from 'bcryptjs';
+import { verify, sign } from 'jsonwebtoken';
 import { Op } from 'sequelize';
 
 import { User } from '../db/models/User';
 
 import { BadRequestError, WrongCredentialsError } from '../errors';
-import logger from '../logger';
 
 const secretKey = process.env.SECRET_KEY || 'mgIrb2CBb87tqVXpT+cYcA==';
 
 /** Generates a password hash for a plain password */
 async function generateHash(password: string) {
-	const salt = await bcrypt.genSalt(10);
-	const hash = await bcrypt.hash(password, salt);
+	const salt = await genSalt(10);
+	const hashed = await hash(password, salt);
 
-	return hash;
+	return hashed;
 }
 
 /** Basic login function using identifier (username or email) and a password
@@ -51,7 +50,7 @@ async function login(identifier: string | null, password: string | null) {
 		throw new WrongCredentialsError('Wrong credentials');
 	}
 
-	const result = await bcrypt.compare(password, hash);
+	const result = await compare(password, hash);
 	if (!result) {
 		throw new WrongCredentialsError('Wrong credentials');
 	}
@@ -75,11 +74,9 @@ function tokenVerify(tokenString: string) {
 
 	const token = tokenParts[1];
 
-	logger.info('Token: ' + token);
-
 	let userId: string = '';
 	try {
-		const decodedToken = jwt.verify(token, secretKey);
+		const decodedToken = verify(token, secretKey);
 
 		if (typeof decodedToken === 'string') {
 			throw new WrongCredentialsError('Invalid token');
@@ -95,7 +92,7 @@ function tokenVerify(tokenString: string) {
 
 /** Generate a signed token for user, expires in 7 days */
 function tokenGet(user: User) {
-	const token = jwt.sign(user.dataValues, secretKey, { expiresIn: '7d' });
+	const token = sign(user.dataValues, secretKey, { expiresIn: '7d' });
 
 	return token;
 }
