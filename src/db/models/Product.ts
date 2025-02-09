@@ -274,7 +274,7 @@ export class Product extends Model<
 			};
 		}, {}) as ProductBaseInterface;
 
-		const [categories, price, prices, discount, images, thumbnail] =
+		const [categories, price, prices, discount, images] =
 			await Promise.all([
 				fetchMultiData<CategoryInterface, Category>(
 					() => this.getCategories(),
@@ -290,7 +290,7 @@ export class Product extends Model<
 					dto
 				),
 				fetchMultiData<ImageInterface, Image>(() => this.getImages(), dto),
-				fetchSingleData<ImageInterface, Image>(() => this.getThumbnail(), dto),
+				//fetchSingleData<ImageInterface, Image>(() => this.getThumbnail(), dto),
 			]);
 
 		const associated_data: ProductAssociationsInterface = {
@@ -299,7 +299,6 @@ export class Product extends Model<
 			prices,
 			discount,
 			images,
-			thumbnail,
 		};
 
 		return {

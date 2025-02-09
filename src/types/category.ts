@@ -13,7 +13,7 @@ export type CategoryModifiable = z.infer<typeof categoryModifiableSchema>;
 
 export const categoriesGetSchema = z.object({
 	name: z.string().optional(),
-	parentId: z.string().uuid().optional(),
-	pageParam: z.number().min(1),
-	sizeParam: z.number().optional()
+	parentId: z.union([z.string().uuid(), z.literal("null")]).optional(),
+	pageParam: z.string().optional(),
+	sizeParam: z.string().optional()
 });

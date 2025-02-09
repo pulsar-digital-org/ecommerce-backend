@@ -6,7 +6,7 @@ import { Category } from "../db/models/Category";
 import { authSuperHandler } from "../middleware";
 import { productModifiableSchema } from "../types/product";
 
-const productsRouter = new Hono().post('/', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
+const productsRouter = new Hono().post('', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
 	const product = await productCreate(c.req.valid('form'));
 
 	c.status(200);
@@ -18,7 +18,7 @@ const productsRouter = new Hono().post('/', authSuperHandler, zValidator('form',
 
 	c.status(200);
 	return c.json({ product: await product.data() });
-}).get('/', async (c) => {
+}).get('', async (c) => {
 	// TODO:
 	const { category: categoryName, name, pageParam, sizeParam } = c.req.query();
 

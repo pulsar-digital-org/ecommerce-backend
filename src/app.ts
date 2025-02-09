@@ -17,8 +17,10 @@ const app = new Hono().use(async (c, next) => {
 		throw new NotAvailableError('Database is not available');
 	}
 	await next();
-}).onError((err, c) => {
+}).route('api/categories', categoriesRouter).route('api/auth', authRouter).route('api/users', usersRouter).route('api/products', productsRouter).onError((err, c) => {
 	if (err instanceof HTTPException) {
+		console.log(err.status, err.message);
+
 		c.status(err.status);
 		return c.json({ message: err.message });
 	}
@@ -27,7 +29,7 @@ const app = new Hono().use(async (c, next) => {
 
 	c.status(500);
 	return c.json({ message: "Unknown error" });
-}).route('api/categories/', categoriesRouter).route('api/auth/', authRouter).route('api/users/', usersRouter).route('api/products/', productsRouter);
+});
 
 export type AppType = typeof app;
 export default app;

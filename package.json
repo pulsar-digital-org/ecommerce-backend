@@ -2,11 +2,12 @@
   "name": "",
   "version": "1.0.0",
   "description": "",
+  "types": "dist/app.d.ts",
   "main": "dist/functions/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist && rm -f ./tsconfig.tsbuildinfo",
     "prestart": "npm run clean && npm run build",
     "db:migrate": "npm run build && npx sequelize-cli db:migrate",
     "db:makemigrations": "npm run build && npx sequelize-mig migration:make",

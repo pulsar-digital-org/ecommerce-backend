@@ -7,12 +7,12 @@ import { tokenGet } from "../controllers/auth";
 import { UnauthorizedError } from "../errors";
 import { userModifiableSchema } from "../types/user";
 
-const usersRouter = new Hono().post('/', async (c) => {
+const usersRouter = new Hono().post('', async (c) => {
 	const user = await userCreateGuest();
 
 	c.status(200);
 	return c.json({ token: tokenGet(user), user: await user.data() });
-}).get('/self/', authHandler, async (c) => {
+}).get('/self', authHandler, async (c) => {
 	c.status(200);
 	return c.json({ user: c.var.user });
 }).get('/:id', authHandler, async (c) => {
@@ -24,7 +24,7 @@ const usersRouter = new Hono().post('/', async (c) => {
 
 	c.status(200);
 	return c.json({ user: await user.data() });
-}).get('/', authSuperHandler, async (c) => {
+}).get('', authSuperHandler, async (c) => {
 	const { role, username, email, pageParam, sizeParam } = c.req.query();
 
 	const { users, total, page, size } = await userGetMultiple(

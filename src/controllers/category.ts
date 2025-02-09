@@ -55,7 +55,7 @@ async function categoryGetMultiple(
 	);
 
 	const conditions = filteredEntries.map(([key, value]) => ({
-		[key]: {
+		[key]: value === 'null' ? { [Op.eq]: null } : {
 			[Op.iLike]: `%${value}%`,
 		},
 	}));
