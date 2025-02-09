@@ -29,4 +29,5 @@ const app = new Hono().use(async (c, next) => {
 	return c.json({ message: "Unknown error" });
 }).route('api/categories/', categoriesRouter).route('api/auth/', authRouter).route('api/users/', usersRouter).route('api/products/', productsRouter);
 
+export type AppType = typeof app;
 export default app;
