@@ -13,3 +13,5 @@ app.http('httpTrigger', {
 	route: '{*proxy}',
 	handler: azureHonoHandler(honoApp.fetch),
 })
+
+export type AppType = typeof honoApp;
