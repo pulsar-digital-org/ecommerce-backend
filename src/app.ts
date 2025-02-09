@@ -38,4 +38,5 @@ app.onError((err, c) => {
 	return c.json({ message: "Unknown error" });
 });
 
-export default app
+export default app;
+export type AppType = typeof app;
