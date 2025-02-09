@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { categoryCreate, categoryDelete, categoryGet, categoryGetMultiple, categorySubAdd, categorySubRemove, categoryUpdate } from "../controllers/category";
 import { authSuperHandler } from "../middleware";
 import { zValidator } from '@hono/zod-validator'
-import { categoryModifiableSchema } from "../types/category";
+import { categoriesGetSchema, categoryModifiableSchema } from "../types/category";
 
 const categoriesRouter = new Hono().post('/', authSuperHandler, zValidator('form', categoryModifiableSchema), async (c) => {
 	const category = await categoryCreate(c.req.valid('form'));
@@ -16,8 +16,8 @@ const categoriesRouter = new Hono().post('/', authSuperHandler, zValidator('form
 
 	c.status(200);
 	return c.json({ category: await category.data() });
-}).get('/', async (c) => {
-	const { name, parent, pageParam, sizeParam } = c.req.query();
+}).get('/', zValidator('query', categoriesGetSchema), async (c) => {
+	const { name, parentId, pageParam, sizeParam } = c.req.query();
 
 	const { categories, total, page, size } = await categoryGetMultiple(
 		{
@@ -26,7 +26,7 @@ const categoriesRouter = new Hono().post('/', authSuperHandler, zValidator('form
 		},
 		{
 			name,
-			parentCategoryId: parent
+			parentCategoryId: parentId
 		});
 
 	const hasNextPage = page * size < total;

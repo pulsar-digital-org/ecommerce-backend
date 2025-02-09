@@ -10,3 +10,10 @@ export const categoryModifiableSchema = z.object({
 });
 
 export type CategoryModifiable = z.infer<typeof categoryModifiableSchema>;
+
+export const categoriesGetSchema = z.object({
+	name: z.string().optional(),
+	parentId: z.string().uuid().optional(),
+	pageParam: z.number().min(1),
+	sizeParam: z.number().optional()
+});
