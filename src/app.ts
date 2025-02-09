@@ -8,9 +8,7 @@ import categoriesRouter from './routes/category';
 import productsRouter from './routes/product';
 import usersRouter from './routes/user';
 
-const app = new Hono()
-
-app.use(async (c, next) => {
+const app = new Hono().use(async (c, next) => {
 	try {
 		console.log(c.req.path);
 		initModels(db);
@@ -19,14 +17,7 @@ app.use(async (c, next) => {
 		throw new NotAvailableError('Database is not available');
 	}
 	await next();
-})
-
-app.route('api/categories/', categoriesRouter);
-app.route('api/auth/', authRouter);
-app.route('api/users/', usersRouter);
-app.route('api/products/', productsRouter);
-
-app.onError((err, c) => {
+}).onError((err, c) => {
 	if (err instanceof HTTPException) {
 		c.status(err.status);
 		return c.json({ message: err.message });
@@ -36,7 +27,7 @@ app.onError((err, c) => {
 
 	c.status(500);
 	return c.json({ message: "Unknown error" });
-});
+}).route('api/categories/', categoriesRouter).route('api/auth/', authRouter).route('api/users/', usersRouter).route('api/products/', productsRouter);
 
-export default app;
 export type AppType = typeof app;
+export default app;
