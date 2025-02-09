@@ -8,6 +8,9 @@
     "outDir": "dist",
     "rootDir": "./src",
     "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
     "allowSyntheticDefaultImports": true,
     "strict": false
   }
