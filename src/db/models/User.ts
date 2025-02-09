@@ -18,13 +18,37 @@ import {
 	HasManyRemoveAssociationsMixin,
 	HasManySetAssociationsMixin
 } from 'sequelize';
-import { Order } from './Order';
+import { Order, OrderInterface } from './Order';
 import {
+	fetchMultiData,
+	fetchSingleData,
 	validateStringField
 } from '../helper';
 import { OrderStatus, UserRole, userRoles } from '../types';
-import { Address } from './Address';
-import { UserType } from '../../types/model';
+import { Address, AddressInterface } from './Address';
+
+interface UserBaseInterface {
+	id: string;
+
+	role: UserRole;
+
+	username?: string;
+	email?: string;
+
+	createdAt: Date;
+	updatedAt: Date;
+	deletedAt?: Date;
+}
+
+interface UserAssociationsInterface {
+	orders: OrderInterface[] | string[];
+	activeOrder?: OrderInterface | string;
+	addresses: AddressInterface[] | string[];
+}
+
+export interface UserInterface
+	extends UserBaseInterface,
+	UserAssociationsInterface { }
 
 type UserAssociations = 'orders' | 'addresses';
 
@@ -144,18 +168,46 @@ export class User extends Model<
 		});
 	}
 
-	public async data(dto: boolean = true): Promise<UserType> {
-		const user = await this.reload({
-			include: [
-				{ model: Order, as: 'orders' },
-				{ model: Address, as: 'addresses' },
-			]
-		});
+	public async data(dto: boolean = true): Promise<UserInterface> {
+		const fields = [
+			'id',
+			'role',
+			'username',
+			'email',
+			'createdAt',
+			'updatedAt'
+		];
 
-		return user.toJSON();
+		const base_data = fields.reduce((acc, field) => {
+			return {
+				...acc,
+				[field]: this[field as keyof User]
+			};
+		}, {}) as UserBaseInterface;
+
+		const [orders, activeOrder, addresses] = await Promise.all([
+			fetchMultiData<OrderInterface, Order>(
+				() => this.getOrders({ order: [['createdAt', 'DESC']] }),
+				dto
+			),
+			fetchSingleData<OrderInterface, Order>(() => this.getActiveOrder(), dto),
+			fetchMultiData<AddressInterface, Address>(() => this.getAddresses(), dto)
+		]);
+
+		const associated_data: UserAssociationsInterface = {
+			orders,
+			activeOrder,
+			addresses
+		};
+
+		return {
+			...base_data,
+
+			...associated_data
+		};
 	}
 
-	public getHash() {
+	public getHash(): string {
 		return this.passwordHash;
 	}
 

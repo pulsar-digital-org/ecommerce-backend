@@ -22,15 +22,42 @@ import {
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
 } from 'sequelize';
-import { Price } from './Price';
+import { Price, PriceInterface } from './Price';
 import {
+	fetchMultiData,
+	fetchSingleData,
 	validateStringField,
 } from '../helper';
 import { OrderItem } from './OrderItem';
-import { Discount } from './Discount';
+import { Discount, DiscountInterface } from './Discount';
 import { ProductPrice } from './ProductPrice';
-import { Category } from './Category';
-import { Image } from './Image';
+import { Category, CategoryInterface } from './Category';
+import { Image, ImageInterface } from './Image';
+
+interface ProductBaseInterface {
+	id: string;
+
+	name: string;
+	description: string;
+	stock: number;
+
+	createdAt: Date;
+	updatedAt: Date;
+	deletedAt?: Date;
+}
+
+interface ProductAssociationsInterface {
+	categories: CategoryInterface[] | string[];
+	price?: PriceInterface | string;
+	prices: PriceInterface[] | string[];
+	discount?: DiscountInterface | string;
+	images: ImageInterface[] | string[];
+	thumbnail?: ImageInterface | string;
+}
+
+export interface ProductInterface
+	extends ProductBaseInterface,
+	ProductAssociationsInterface { }
 
 type ProductAssociations =
 	| 'productPrices'
@@ -229,14 +256,57 @@ export class Product extends Model<
 		});
 	}
 
-	public async data(dto: boolean = true): Promise<any> {
-		const product = await this.reload({
-			include: [
-				{ model: Category }
-			]
-		})
+	public async data(dto: boolean = true): Promise<ProductInterface> {
+		const fields = [
+			'id',
+			'name',
+			'description',
+			'stock',
+			'createdAt',
+			'updatedAt',
+			...(this.deletedAt ? ['deletedAt'] : []),
+		];
 
-		return product.toJSON()
+		const base_data = fields.reduce((acc, field) => {
+			return {
+				...acc,
+				[field]: this[field as keyof Product],
+			};
+		}, {}) as ProductBaseInterface;
+
+		const [categories, price, prices, discount, images, thumbnail] =
+			await Promise.all([
+				fetchMultiData<CategoryInterface, Category>(
+					() => this.getCategories(),
+					dto
+				),
+				fetchSingleData<PriceInterface, Price>(
+					() => this.getActivePrice(),
+					dto
+				),
+				fetchMultiData<PriceInterface, Price>(() => this.getPrices(), dto),
+				fetchSingleData<DiscountInterface, Discount>(
+					() => this.getDiscount(),
+					dto
+				),
+				fetchMultiData<ImageInterface, Image>(() => this.getImages(), dto),
+				fetchSingleData<ImageInterface, Image>(() => this.getThumbnail(), dto),
+			]);
+
+		const associated_data: ProductAssociationsInterface = {
+			categories,
+			price,
+			prices,
+			discount,
+			images,
+			thumbnail,
+		};
+
+		return {
+			...base_data,
+
+			...associated_data,
+		};
 	}
 
 	public async getPrices() {

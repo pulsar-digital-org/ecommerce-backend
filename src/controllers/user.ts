@@ -1,14 +1,13 @@
-import { User } from '../db/models/User';
+import { User, UserInterface } from '../db/models/User';
 import { generateHash } from './auth';
 
 import { AlreadyExistsError, BadRequestError, NotFoundError } from '../errors';
 import { Op, Transaction } from 'sequelize';
 import { UserRole } from '../db/types';
-import { UserType } from '../types/model';
 import db from '../db/db';
 import { UserCreation, UserModifiable } from '../types/user';
 
-async function userCreate(data: UserCreation, existing_user?: User): Promise<UserType> {
+async function userCreate(data: UserCreation, existing_user?: User): Promise<UserInterface> {
   const { username, email, plainPassword: password } = data;
 
   if (!username || !email || !password)
@@ -83,7 +82,7 @@ async function userGet(userId: string, options?: { transaction?: Transaction }) 
 async function userGetMultiple(
   options: { page?: number; size?: number } = {},
   filters: { [key: string]: string | undefined | null } = {}
-): Promise<{ users: UserType[], total: number, page: number, size: number }> {
+): Promise<{ users: UserInterface[], total: number, page: number, size: number }> {
   const { page = 1, size = 10 } = options;
 
   if (page < 1 || size < 1) throw new BadRequestError("Invalid pagination params");

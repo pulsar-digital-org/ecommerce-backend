@@ -6,26 +6,20 @@ import { Category } from "../db/models/Category";
 import { authSuperHandler } from "../middleware";
 import { productModifiableSchema } from "../types/product";
 
-const productsRouter = new Hono();
-
-productsRouter.post('/', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
+const productsRouter = new Hono().post('/', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
 	const product = await productCreate(c.req.valid('form'));
 
 	c.status(200);
 	return c.json({ product });
-});
-
-productsRouter.get('/:id', async (c) => {
+}).get('/:id', async (c) => {
 	const { id: productId } = c.req.param();
 
 	const product = await productGet(productId);
 
 	c.status(200);
 	return c.json({ product: await product.data() });
-});
-
-// TODO:
-productsRouter.get('/', async (c) => {
+}).get('/', async (c) => {
+	// TODO:
 	const { category: categoryName, name, pageParam, sizeParam } = c.req.query();
 
 	const { products, total, page, size } = await productGetMultiple(
@@ -48,9 +42,7 @@ productsRouter.get('/', async (c) => {
 
 	c.status(200);
 	return c.json({ items: products, hasNextPage });
-});
-
-productsRouter.put('/:id', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
+}).put('/:id', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
 	const { id: productId } = c.req.param();
 
 	const product = await productGet(productId);
@@ -59,9 +51,7 @@ productsRouter.put('/:id', authSuperHandler, zValidator('form', productModifiabl
 
 	c.status(200);
 	return c.json({ product: updatedProduct });
-});
-
-productsRouter.delete('/:id', authSuperHandler, async (c) => {
+}).delete('/:id', authSuperHandler, async (c) => {
 	const { id: productId } = c.req.param();
 
 	const product = await productGet(productId);

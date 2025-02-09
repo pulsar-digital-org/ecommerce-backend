@@ -1,12 +1,11 @@
 import { Op, Transaction } from 'sequelize';
 import db from '../db/db';
-import { Category } from '../db/models/Category';
+import { Category, CategoryInterface } from '../db/models/Category';
 import { BadRequestError } from '../errors';
 import { CategoryModifiable } from '../types/category';
-import { CategoryType } from '../types/model';
 import { imageGet } from './image';
 
-async function categoryCreate(data: CategoryModifiable): Promise<CategoryType> {
+async function categoryCreate(data: CategoryModifiable): Promise<CategoryInterface> {
 	const { imageId, parentId, ...categoryData } = data;
 
 	const image = await imageGet(imageId);
@@ -40,7 +39,7 @@ async function categoryGet(categoryId: string, options?: { transaction?: Transac
 async function categoryGetMultiple(
 	options: { page?: number; size?: number } = {},
 	filters: { [key: string]: string | undefined | null } = {}
-): Promise<{ categories: CategoryType[], total: number, page: number, size: number }> {
+): Promise<{ categories: CategoryInterface[], total: number, page: number, size: number }> {
 	const { page = 1, size = 10 } = options;
 
 	if (page < 1 || size < 1) throw new BadRequestError("Invalid pagination params");

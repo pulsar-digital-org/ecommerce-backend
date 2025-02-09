@@ -33,12 +33,34 @@ import {
 	HasOneSetAssociationMixin,
 	HasOneGetAssociationMixin,
 } from 'sequelize';
-import { Product } from './Product';
+import { Product, ProductInterface } from './Product';
 import {
+	fetchMultiData,
+	fetchSingleData,
 	validateStringField,
 } from '../helper';
-import { Image } from './Image';
-import { CategoryType } from '../../types/model';
+import { Image, ImageInterface } from './Image';
+
+interface CategoryBaseInterface {
+	id: string;
+
+	name: string;
+
+	createdAt: Date;
+	updatedAt: Date;
+	deletedAt?: Date;
+}
+
+interface CategoryAssociationsInterface {
+	products: ProductInterface[] | string[];
+	subcategories?: CategoryInterface[] | string[];
+	parentCategory?: CategoryInterface | string;
+	thumbnail?: ImageInterface | string;
+}
+
+export interface CategoryInterface
+	extends CategoryBaseInterface,
+	CategoryAssociationsInterface { }
 
 type CategoryAssociations = 'products' | 'subcategories' | 'parentCategory' | 'thumbnail';
 
@@ -158,15 +180,49 @@ export class Category extends Model<
 		});
 	}
 
-	public async data(): Promise<CategoryType> {
-		const category = await this.reload({
-			include: [
-				{ model: Product, as: 'products' },
-				{ model: Category, as: 'subcategories' },
-				{ model: Image, as: 'thumbnail' }
-			]
-		});
+	public async data(dto: boolean = true): Promise<CategoryInterface> {
+		const fields = [
+			'id',
+			'name',
+			'createdAt',
+			'updatedAt',
+			...(this.deletedAt ? ['deletedAt'] : []),
+		];
 
-		return category.toJSON();
+		const base_data = fields.reduce((acc, field) => {
+			return {
+				...acc,
+				[field]: this[field as keyof Category],
+			};
+		}, {}) as CategoryBaseInterface;
+
+		const [products, subcategories, parentCategory, thumbnail] = await Promise.all([
+			fetchMultiData<ProductInterface, Product>(() => this.getProducts(), dto),
+			fetchMultiData<CategoryInterface, Category>(
+				() => this.getSubcategories({ order: [['createdAt', 'DESC']] }),
+				dto
+			),
+			fetchSingleData<CategoryInterface, Category>(
+				() => this.getParentCategory({ order: [['createdAt', 'DESC']] }),
+				dto
+			),
+			fetchSingleData<ImageInterface, Image>(
+				() => this.getThumbnail(),
+				dto
+			),
+		]);
+
+		const associated_data: CategoryAssociationsInterface = {
+			products,
+			subcategories,
+			parentCategory,
+			thumbnail
+		};
+
+		return {
+			...base_data,
+
+			...associated_data,
+		};
 	}
 }

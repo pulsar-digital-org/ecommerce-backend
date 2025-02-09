@@ -1,15 +1,14 @@
 import { Includeable, Op, Transaction } from 'sequelize';
 import db from '../db/db';
 import { BadRequestError, NotFoundError } from '../errors';
-import { Product } from '../db/models/Product';
+import { Product, ProductInterface } from '../db/models/Product';
 import { Price } from '../db/models/Price';
 import { Image } from '../db/models/Image';
 import { ProductModifiable } from '../types/product';
 import { categoryGet } from './category';
 import { imageGet } from './image';
-import { ProductType } from '../types/model';
 
-async function productCreate(data: ProductModifiable): Promise<ProductType> {
+async function productCreate(data: ProductModifiable): Promise<ProductInterface> {
 	const { images: imageIds, thumbnail: thumbnailId, categories: categoryIds, ...productData } = data;
 
 	const categories = await Promise.all(
@@ -62,7 +61,7 @@ async function productDelete(product: Product, force: boolean = false) {
 async function productUpdate(
 	product: Product,
 	data: ProductModifiable
-): Promise<ProductType> {
+): Promise<ProductInterface> {
 	const { images: imageIds, thumbnail: thumbnailId, categories: categoryIds, ...productData } = data;
 
 	const categories = await Promise.all(
@@ -128,7 +127,7 @@ async function productGetMultiple(
 	options: { page?: number; size?: number } = {},
 	filters: { [key: string]: string | undefined | null } = {},
 	includes: Includeable[]
-): Promise<{ products: ProductType[], total: number, page: number, size: number }> {
+): Promise<{ products: ProductInterface[], total: number, page: number, size: number }> {
 	const { page = 1, size = 10 } = options;
 
 	if (page < 1 || size < 1) throw new BadRequestError("Invalid pagination params");

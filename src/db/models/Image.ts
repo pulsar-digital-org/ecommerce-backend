@@ -15,7 +15,7 @@ import {
 import { fetchSingleData, validateStringField } from '../helper';
 import logger from '../../logger';
 import db from '../db';
-import { User } from './User';
+import { User, UserInterface } from './User';
 
 interface ImageBaseInterface {
 	id: string;
@@ -150,7 +150,7 @@ export class Image extends Model<
 		}, {}) as ImageBaseInterface;
 
 		const [user] = await Promise.all([
-			fetchSingleData<any, User>(() => this.getUser(), dto),
+			fetchSingleData<UserInterface, User>(() => this.getUser(), dto),
 		]);
 
 		if (user === undefined) {

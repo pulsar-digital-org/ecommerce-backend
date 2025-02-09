@@ -6,18 +6,14 @@ import { User } from "../db/models/User";
 import { BadRequestError, NotFoundError } from "../errors";
 import { loginSchema, registerSchema } from "../types/auth";
 
-const authRouter = new Hono();
-
-authRouter.post('login/', zValidator('form', loginSchema), async (c) => {
+const authRouter = new Hono().post('login/', zValidator('form', loginSchema), async (c) => {
 	const { identifier, plainPassword } = c.req.valid('form');
 
 	const token = await login(identifier, plainPassword);
 
 	c.status(200);
 	return c.json({ token });
-});
-
-authRouter.post('register/', zValidator('form', registerSchema), async (c) => {
+}).post('register/', zValidator('form', registerSchema), async (c) => {
 	const { username, email, plainPassword, token } = c.req.valid('form');
 
 	let existingUser: User | undefined;
