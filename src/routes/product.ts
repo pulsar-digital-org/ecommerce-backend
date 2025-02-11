@@ -4,7 +4,7 @@ import { Op } from "sequelize";
 import { productCreate, productDelete, productGet, productGetMultiple, productUpdate } from "../controllers/product";
 import { Category } from "../db/models/Category";
 import { authSuperHandler } from "../middleware";
-import { productModifiableSchema } from "../types/product";
+import { productModifiableSchema, productsGetSchema } from "../types/product";
 
 const productsRouter = new Hono().post('', authSuperHandler, zValidator('form', productModifiableSchema), async (c) => {
 	const product = await productCreate(c.req.valid('form'));
@@ -18,9 +18,8 @@ const productsRouter = new Hono().post('', authSuperHandler, zValidator('form', 
 
 	c.status(200);
 	return c.json({ product: await product.data() });
-}).get('', async (c) => {
-	// TODO:
-	const { category: categoryName, name, pageParam, sizeParam } = c.req.query();
+}).get('', zValidator('query', productsGetSchema), async (c) => {
+	const { categoryId, name, pageParam, sizeParam } = c.req.valid('query');
 
 	const { products, total, page, size } = await productGetMultiple(
 		{
@@ -32,8 +31,8 @@ const productsRouter = new Hono().post('', authSuperHandler, zValidator('form', 
 		}, [
 		{
 			model: Category,
-			where: !categoryName ? { name: { [Op.is]: null } } : { name: categoryName },
-			required: !!categoryName,
+			where: !categoryId ? { name: { [Op.is]: null } } : { id: categoryId },
+			required: !!categoryId,
 		},
 	],
 	);

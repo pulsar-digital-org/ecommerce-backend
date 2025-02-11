@@ -14,3 +14,10 @@ export const productModifiableSchema = z.object({
 });
 
 export type ProductModifiable = z.infer<typeof productModifiableSchema>;
+
+export const productsGetSchema = z.object({
+	categoryId: z.string().uuid().optional(),
+	name: z.string().optional(),
+	pageParam: z.string().optional(),
+	sizeParam: z.string().optional()
+});
