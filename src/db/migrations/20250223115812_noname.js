@@ -6,20 +6,24 @@ const Sequelize = require("sequelize");
  * createTable() => "Discounts", deps: []
  * createTable() => "Users", deps: []
  * createTable() => "Addresses", deps: [Users]
+ * createTable() => "Categories", deps: [Categories]
+ * createTable() => "Images", deps: [Categories, Users]
  * createTable() => "Orders", deps: [Discounts, Users]
- * createTable() => "Products", deps: [Discounts]
+ * createTable() => "Products", deps: [Discounts, Images]
  * createTable() => "Payments", deps: [Orders]
  * createTable() => "Prices", deps: [Discounts, Payments]
  * createTable() => "OrderItems", deps: [Orders, Products]
+ * createTable() => "ProductImages", deps: [Products, Images]
  * createTable() => "ProductPrices", deps: [Prices, Products]
  * createTable() => "OrderAddress", deps: [Addresses, Orders]
+ * createTable() => "ProductCategory", deps: [Categories, Products]
  *
  */
 
 const info = {
   revision: 1,
   name: "noname",
-  created: "2024-12-09T19:55:07.407Z",
+  created: "2025-02-23T11:58:12.110Z",
   comment: "",
 };
 
@@ -145,6 +149,87 @@ const migrationCommands = (transaction) => [
   {
     fn: "createTable",
     params: [
+      "Categories",
+      {
+        id: {
+          type: Sequelize.UUID,
+          field: "id",
+          defaultValue: Sequelize.UUIDV4,
+          unique: true,
+          allowNull: false,
+          primaryKey: true,
+        },
+        name: { type: Sequelize.STRING, field: "name", allowNull: false },
+        createdAt: { type: Sequelize.DATE, field: "createdAt" },
+        updatedAt: { type: Sequelize.DATE, field: "updatedAt" },
+        deletedAt: {
+          type: Sequelize.DATE,
+          field: "deletedAt",
+          allowNull: true,
+        },
+        parentCategoryId: {
+          type: Sequelize.UUID,
+          field: "parentCategoryId",
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
+          references: { model: "Categories", key: "id" },
+          allowNull: true,
+        },
+      },
+      { transaction },
+    ],
+  },
+  {
+    fn: "createTable",
+    params: [
+      "Images",
+      {
+        id: {
+          type: Sequelize.UUID,
+          field: "id",
+          defaultValue: Sequelize.UUIDV4,
+          unique: true,
+          allowNull: false,
+          primaryKey: true,
+        },
+        url: { type: Sequelize.STRING, field: "url" },
+        active: {
+          type: Sequelize.BOOLEAN,
+          field: "active",
+          defaultValue: true,
+        },
+        name: { type: Sequelize.STRING, field: "name" },
+        size: { type: Sequelize.INTEGER, field: "size", defaultValue: 0 },
+        createdAt: { type: Sequelize.DATE, field: "createdAt" },
+        updatedAt: { type: Sequelize.DATE, field: "updatedAt" },
+        deletedAt: {
+          type: Sequelize.DATE,
+          field: "deletedAt",
+          allowNull: true,
+        },
+        imageId: {
+          type: Sequelize.UUID,
+          field: "imageId",
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
+          references: { model: "Categories", key: "id" },
+          allowNull: true,
+        },
+        userId: {
+          type: Sequelize.UUID,
+          field: "userId",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+          references: { model: "Users", key: "id" },
+          allowNull: true,
+        },
+      },
+      { transaction },
+    ],
+  },
+  {
+    fn: "createTable",
+    params: [
       "Orders",
       {
         id: {
@@ -208,22 +293,6 @@ const migrationCommands = (transaction) => [
           defaultValue: "",
         },
         stock: { type: Sequelize.INTEGER, field: "stock", defaultValue: 1 },
-        thumbnailUrl: {
-          type: Sequelize.STRING,
-          field: "thumbnailUrl",
-          defaultValue: "",
-        },
-        imageUrls: {
-          type: Sequelize.JSON,
-          field: "imageUrls",
-          defaultValue: Sequelize.Array,
-        },
-        type: {
-          type: Sequelize.STRING,
-          field: "type",
-          defaultValue: "drawing",
-          allowNull: false,
-        },
         createdAt: { type: Sequelize.DATE, field: "createdAt" },
         updatedAt: { type: Sequelize.DATE, field: "updatedAt" },
         deletedAt: {
@@ -237,6 +306,14 @@ const migrationCommands = (transaction) => [
           onUpdate: "CASCADE",
           onDelete: "SET NULL",
           references: { model: "Discounts", key: "id" },
+          allowNull: true,
+        },
+        thumbnailId: {
+          type: Sequelize.UUID,
+          field: "thumbnailId",
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
+          references: { model: "Images", key: "id" },
           allowNull: true,
         },
       },
@@ -376,6 +453,52 @@ const migrationCommands = (transaction) => [
   {
     fn: "createTable",
     params: [
+      "ProductImages",
+      {
+        id: {
+          type: Sequelize.UUID,
+          field: "id",
+          defaultValue: Sequelize.UUIDV4,
+          unique: true,
+          allowNull: false,
+          primaryKey: true,
+        },
+        isThumbnail: {
+          type: Sequelize.BOOLEAN,
+          field: "isThumbnail",
+          defaultValue: false,
+          allowNull: false,
+        },
+        createdAt: { type: Sequelize.DATE, field: "createdAt" },
+        updatedAt: { type: Sequelize.DATE, field: "updatedAt" },
+        deletedAt: {
+          type: Sequelize.DATE,
+          field: "deletedAt",
+          allowNull: true,
+        },
+        productId: {
+          type: Sequelize.UUID,
+          field: "productId",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+          references: { model: "Products", key: "id" },
+          allowNull: true,
+        },
+        imageId: {
+          type: Sequelize.UUID,
+          field: "imageId",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+          references: { model: "Images", key: "id" },
+          allowNull: true,
+        },
+      },
+      { transaction },
+    ],
+  },
+  {
+    fn: "createTable",
+    params: [
       "ProductPrices",
       {
         id: {
@@ -454,6 +577,41 @@ const migrationCommands = (transaction) => [
       { transaction },
     ],
   },
+  {
+    fn: "createTable",
+    params: [
+      "ProductCategory",
+      {
+        createdAt: {
+          type: Sequelize.DATE,
+          field: "createdAt",
+          allowNull: false,
+        },
+        updatedAt: {
+          type: Sequelize.DATE,
+          field: "updatedAt",
+          allowNull: false,
+        },
+        CategoryId: {
+          type: Sequelize.UUID,
+          field: "CategoryId",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+          references: { model: "Categories", key: "id" },
+          primaryKey: true,
+        },
+        ProductId: {
+          type: Sequelize.UUID,
+          field: "ProductId",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+          references: { model: "Products", key: "id" },
+          primaryKey: true,
+        },
+      },
+      { transaction },
+    ],
+  },
 ];
 
 const rollbackCommands = (transaction) => [
@@ -463,7 +621,15 @@ const rollbackCommands = (transaction) => [
   },
   {
     fn: "dropTable",
+    params: ["Categories", { transaction }],
+  },
+  {
+    fn: "dropTable",
     params: ["Discounts", { transaction }],
+  },
+  {
+    fn: "dropTable",
+    params: ["Images", { transaction }],
   },
   {
     fn: "dropTable",
@@ -487,6 +653,10 @@ const rollbackCommands = (transaction) => [
   },
   {
     fn: "dropTable",
+    params: ["ProductImages", { transaction }],
+  },
+  {
+    fn: "dropTable",
     params: ["ProductPrices", { transaction }],
   },
   {
@@ -496,6 +666,10 @@ const rollbackCommands = (transaction) => [
   {
     fn: "dropTable",
     params: ["OrderAddress", { transaction }],
+  },
+  {
+    fn: "dropTable",
+    params: ["ProductCategory", { transaction }],
   },
 ];
 

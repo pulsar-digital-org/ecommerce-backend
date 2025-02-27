@@ -1,12 +1,12 @@
-import { HTTPException } from 'hono/http-exception';
+import { HTTPException } from 'hono/http-exception'
 
 /**
  * Status code 400
  */
 class BadRequestError extends HTTPException {
 	constructor(message = '') {
-		super(401, { message });
-		this.name = 'BadRequestError';
+		super(400, { message })
+		this.name = 'BadRequestError'
 	}
 }
 
@@ -15,8 +15,8 @@ class BadRequestError extends HTTPException {
  */
 class UnauthorizedError extends HTTPException {
 	constructor(message = '') {
-		super(401, { message });
-		this.name = 'UnauthorizedError';
+		super(401, { message })
+		this.name = 'UnauthorizedError'
 	}
 }
 
@@ -25,8 +25,8 @@ class UnauthorizedError extends HTTPException {
  */
 class AlreadyExistsError extends HTTPException {
 	constructor(message = '') {
-		super(403, { message });
-		this.name = 'AlreadyExistsError';
+		super(403, { message })
+		this.name = 'AlreadyExistsError'
 	}
 }
 
@@ -35,8 +35,8 @@ class AlreadyExistsError extends HTTPException {
  */
 class ForbiddenError extends HTTPException {
 	constructor(message = '') {
-		super(403, { message });
-		this.name = 'ForbiddenError';
+		super(403, { message })
+		this.name = 'ForbiddenError'
 	}
 }
 
@@ -45,8 +45,8 @@ class ForbiddenError extends HTTPException {
  */
 class NotFoundError extends HTTPException {
 	constructor(message = '') {
-		super(404, { message });
-		this.name = 'NotFoundError';
+		super(404, { message })
+		this.name = 'NotFoundError'
 	}
 }
 
@@ -55,8 +55,8 @@ class NotFoundError extends HTTPException {
  */
 class WrongCredentialsError extends HTTPException {
 	constructor(message = '') {
-		super(401, { message });
-		this.name = 'WrongCredentialsError';
+		super(401, { message })
+		this.name = 'WrongCredentialsError'
 	}
 }
 
@@ -64,11 +64,11 @@ class WrongCredentialsError extends HTTPException {
  * Status code 429
  */
 class TooManyRequestsError extends HTTPException {
-	retryAfter: number;
+	retryAfter: number
 	constructor(message = '', retryAfter = 2) {
-		super(429, { message });
-		this.name = 'TooManyRequestsError';
-		this.retryAfter = retryAfter;
+		super(429, { message })
+		this.name = 'TooManyRequestsError'
+		this.retryAfter = retryAfter
 	}
 }
 
@@ -77,8 +77,8 @@ class TooManyRequestsError extends HTTPException {
  */
 class NotAvailableError extends HTTPException {
 	constructor(message = '') {
-		super(503, { message });
-		this.name = 'NotAvailableError';
+		super(503, { message })
+		this.name = 'NotAvailableError'
 	}
 }
 
@@ -90,5 +90,5 @@ export {
 	NotFoundError,
 	WrongCredentialsError,
 	TooManyRequestsError,
-	NotAvailableError
-};
+	NotAvailableError,
+}

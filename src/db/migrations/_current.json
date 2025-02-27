@@ -254,6 +254,17 @@
                     "onUpdate": "CASCADE",
                     "field": "userId",
                     "seqType": "Sequelize.UUID"
+                },
+                "productId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Products",
+                        "key": "id"
+                    },
+                    "onDelete": "CASCADE",
+                    "onUpdate": "CASCADE",
+                    "field": "productId",
+                    "seqType": "Sequelize.UUID"
                 }
             },
             "indexes": []
@@ -813,8 +824,8 @@
             "indexes": []
         }
     },
-    "path": "/home/xd/Documents/_pulsar/internal/ecommerce-backend/src/db/migrations/_current.json",
-    "backupPath": "/home/xd/Documents/_pulsar/internal/ecommerce-backend/src/db/migrations/_current_bak.json",
+    "path": "/home/xd/Documents/_pulsar/customer_projects/panco/apps/server/src/db/migrations/_current.json",
+    "backupPath": "/home/xd/Documents/_pulsar/customer_projects/panco/apps/server/src/db/migrations/_current_bak.json",
     "exists": true,
-    "revision": 10
+    "revision": 2
 }

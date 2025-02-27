@@ -3,34 +3,29 @@ const Sequelize = require("sequelize");
 /**
  * Actions summary:
  *
- * removeColumn(thumbnailUrl) => "Categories"
- * addColumn(imageId) => "Images"
+ * addColumn(productId) => "Images"
  *
  */
 
 const info = {
-  revision: 9,
+  revision: 2,
   name: "noname",
-  created: "2025-02-06T11:52:30.948Z",
+  created: "2025-02-23T12:45:11.248Z",
   comment: "",
 };
 
 const migrationCommands = (transaction) => [
   {
-    fn: "removeColumn",
-    params: ["Categories", "thumbnailUrl", { transaction }],
-  },
-  {
     fn: "addColumn",
     params: [
       "Images",
-      "imageId",
+      "productId",
       {
         type: Sequelize.UUID,
-        field: "imageId",
+        field: "productId",
         onUpdate: "CASCADE",
-        onDelete: "SET NULL",
-        references: { model: "Categories", key: "id" },
+        onDelete: "CASCADE",
+        references: { model: "Products", key: "id" },
         allowNull: true,
       },
       { transaction },
@@ -41,16 +36,7 @@ const migrationCommands = (transaction) => [
 const rollbackCommands = (transaction) => [
   {
     fn: "removeColumn",
-    params: ["Images", "imageId", { transaction }],
-  },
-  {
-    fn: "addColumn",
-    params: [
-      "Categories",
-      "thumbnailUrl",
-      { type: Sequelize.STRING, field: "thumbnailUrl", allowNull: true },
-      { transaction },
-    ],
+    params: ["Images", "productId", { transaction }],
   },
 ];
 
