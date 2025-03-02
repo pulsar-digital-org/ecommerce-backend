@@ -4,7 +4,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --workspaces=false --install-links
 COPY . .
-RUN npm run db:migrate
 
 # runner
 # To enable ssh & remote debugging on app service change the base image to the one below
