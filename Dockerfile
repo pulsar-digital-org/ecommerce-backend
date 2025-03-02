@@ -2,8 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --workspaces=false --install-links
 COPY . .
+RUN npm run db:migrate
 
 # runner
 # To enable ssh & remote debugging on app service change the base image to the one below
@@ -17,10 +18,6 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
 
 WORKDIR /home/site/wwwroot
 
-COPY --from=builder /app/apps/server/package.json ./
-COPY --from=builder /app/apps/server/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/server/dist ./dist
-
-RUN npm run db:migrate
-
+COPY --from=builder /app/dist ./dist
