@@ -135,7 +135,7 @@ async function productUpdate(
 		}
 
 		for (const image of toCreate) {
-			product.addImage(image, { transaction: t })
+			await product.addImage(image, { transaction: t })
 		}
 
 		return product

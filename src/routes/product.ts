@@ -18,8 +18,6 @@ const productsRouter = new Hono()
 		authSuperHandler,
 		zValidator('json', productModifiableSchema),
 		async (c) => {
-			console.log('CREATE PRODUCT: ', c.req.valid('json'))
-
 			const product = await productCreate(c.req.valid('json'))
 
 			c.status(200)
@@ -62,13 +60,13 @@ const productsRouter = new Hono()
 	.put(
 		'/:id',
 		authSuperHandler,
-		zValidator('form', productModifiableSchema),
+		zValidator('json', productModifiableSchema),
 		async (c) => {
 			const { id: productId } = c.req.param()
 
 			const product = await productGet(productId)
 
-			const updatedProduct = await productUpdate(product, c.req.valid('form'))
+			const updatedProduct = await productUpdate(product, c.req.valid('json'))
 
 			c.status(200)
 			return c.json({ product: updatedProduct })
