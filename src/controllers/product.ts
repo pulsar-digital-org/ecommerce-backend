@@ -123,19 +123,18 @@ async function productUpdate(
 			await product.setThumbnail(thumbnail, { transaction: t })
 		}
 
-		const toCreate = await Promise.all(
-			images.filter(async (image) => !(await product.hasImage(image)))
-		)
-		const toDelete = (await product.getImages()).filter(
-			(image) => !images.includes(image)
-		)
+		const currentImages = await product.getImages({ transaction: t })
 
-		for (const image of toDelete) {
-			await image.destroy({ transaction: t })
+		for (const image of currentImages) {
+			if (!images.map((i) => i.id).includes(image.id)) {
+				await image.destroy({ transaction: t })
+			}
 		}
 
-		for (const image of toCreate) {
-			await product.addImage(image, { transaction: t })
+		for (const image of images) {
+			if (!currentImages.map((i) => i.id).includes(image.id)) {
+				await product.addImage(image, { transaction: t })
+			}
 		}
 
 		return product

@@ -11,61 +11,62 @@ import {
 	BelongsToCreateAssociationMixin,
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
-} from 'sequelize';
-import { fetchSingleData, validateStringField } from '../helper';
-import logger from '../../logger';
-import db from '../db';
-import { User, UserInterface } from './User';
+} from 'sequelize'
+import { fetchSingleData, validateStringField } from '../helper'
+import logger from '../../logger'
+import db from '../db'
+import { User, UserInterface } from './User'
+import { removeImageFromBucket } from '../../controllers/image'
 
 interface ImageBaseInterface {
-	id: string;
+	id: string
 
-	url: string;
+	url: string
 
-	active: boolean;
-	name: string;
-	size: number;
+	active: boolean
+	name: string
+	size: number
 
-	createdAt: Date;
-	updatedAt: Date;
-	deletedAt?: Date;
+	createdAt: Date
+	updatedAt: Date
+	deletedAt?: Date
 }
 
 interface ImageAssociationsInterface {
-	user: any | string;
+	user: any | string
 }
 
 export interface ImageInterface
 	extends ImageBaseInterface,
-	ImageAssociationsInterface { }
+		ImageAssociationsInterface {}
 
-type ImageAssociations = 'user';
+type ImageAssociations = 'user'
 
 export class Image extends Model<
 	InferAttributes<Image, { omit: ImageAssociations }>,
 	InferCreationAttributes<Image, { omit: ImageAssociations }>
 > {
-	declare id: CreationOptional<string>;
+	declare id: CreationOptional<string>
 
-	declare url: CreationOptional<string>;
+	declare url: CreationOptional<string>
 
-	declare active: CreationOptional<boolean>;
-	declare name: string;
-	declare size: CreationOptional<number>;
+	declare active: CreationOptional<boolean>
+	declare name: string
+	declare size: CreationOptional<number>
 
-	declare createdAt: CreationOptional<Date>;
-	declare updatedAt: CreationOptional<Date>;
-	declare deletedAt: CreationOptional<Date>;
+	declare createdAt: CreationOptional<Date>
+	declare updatedAt: CreationOptional<Date>
+	declare deletedAt: CreationOptional<Date>
 
 	// Image belongsTo User
-	declare user?: NonAttribute<User>;
-	declare getUser: BelongsToGetAssociationMixin<User>;
-	declare setUser: BelongsToSetAssociationMixin<User, string>;
-	declare createUser: BelongsToCreateAssociationMixin<User>;
+	declare user?: NonAttribute<User>
+	declare getUser: BelongsToGetAssociationMixin<User>
+	declare setUser: BelongsToSetAssociationMixin<User, string>
+	declare createUser: BelongsToCreateAssociationMixin<User>
 
 	declare static associations: {
-		user: Association<Image, User>;
-	};
+		user: Association<Image, User>
+	}
 
 	static initModel(sequelize: Sequelize): typeof Image {
 		Image.init(
@@ -101,7 +102,7 @@ export class Image extends Model<
 				},
 				size: {
 					type: DataTypes.INTEGER,
-					defaultValue: 0
+					defaultValue: 0,
 				},
 				createdAt: {
 					type: DataTypes.DATE,
@@ -117,17 +118,22 @@ export class Image extends Model<
 			{
 				sequelize,
 				paranoid: true,
+				hooks: {
+					beforeDestroy: async (instance, options) => {
+						await removeImageFromBucket(instance)
+					},
+				},
 			}
-		);
+		)
 
-		return Image;
+		return Image
 	}
 
 	static associate() {
 		Image.belongsTo(User, {
 			foreignKey: 'userId',
 			onDelete: 'CASCADE',
-		});
+		})
 	}
 
 	public async data(dto: boolean = true): Promise<ImageInterface> {
@@ -140,69 +146,69 @@ export class Image extends Model<
 			'createdAt',
 			'updatedAt',
 			...(this.deletedAt ? ['deletedAt'] : []),
-		];
+		]
 
 		const base_data = fields.reduce((acc, field) => {
 			return {
 				...acc,
 				[field]: this[field as keyof Image],
-			};
-		}, {}) as ImageBaseInterface;
+			}
+		}, {}) as ImageBaseInterface
 
 		const [user] = await Promise.all([
 			fetchSingleData<UserInterface, User>(() => this.getUser(), dto),
-		]);
+		])
 
 		if (user === undefined) {
-			throw new Error('User not found');
+			throw new Error('User not found')
 		}
 
 		const associated_data: ImageAssociationsInterface = {
 			user,
-		};
+		}
 
 		return {
 			...base_data,
 
 			...associated_data,
-		};
+		}
 	}
 
 	public async delete(options?: {
-		force?: boolean;
-		transaction?: Transaction;
+		force?: boolean
+		transaction?: Transaction
 	}): Promise<void> {
 		try {
-			const force = options?.force ?? false;
-			const transaction = options?.transaction;
+			const force = options?.force ?? false
+			const transaction = options?.transaction
 
 			if (force) {
 				if (transaction) {
-					await this.cleanUp({ force, transaction });
+					await this.cleanUp({ force, transaction })
 				} else {
 					await db.transaction(async (transaction: Transaction) => {
-						await this.cleanUp({ force, transaction });
-					});
+						await this.cleanUp({ force, transaction })
+					})
 				}
 			} else {
 				if (transaction) {
-					await this.destroy({ transaction });
+					await this.destroy({ transaction })
 				} else {
 					await db.transaction(async (transaction: Transaction) => {
-						await this.destroy({ transaction });
-					});
+						await this.destroy({ transaction })
+					})
 				}
 			}
 		} catch (err: unknown) {
-			logger.error('Delete Address error, ', err);
-			throw err;
+			logger.error('Delete Address error, ', err)
+			throw err
 		}
 	}
 
 	public async cleanUp(options: {
-		force: boolean;
-		transaction: Transaction;
+		force: boolean
+		transaction: Transaction
 	}): Promise<void> {
-		await this.destroy(options);
+		await this.destroy(options)
 	}
 }
