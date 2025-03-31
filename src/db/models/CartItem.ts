@@ -15,46 +15,45 @@ import { Product } from './Product'
 import { fetchSingleData } from '../helper'
 import { BaseModelInterface } from './models'
 
-interface OrderItemBaseInterface extends BaseModelInterface {
+interface CartItemBaseInterface extends BaseModelInterface {
 	quantity: number
-	price: number // locked when the order item is created
+	price: number
 }
 
-interface OrderItemAssociationsInterface {
+interface CartItemAssociationsInterface {
 	product: any | string
 }
 
-export interface OrderItemInterface
-	extends OrderItemBaseInterface,
-		OrderItemAssociationsInterface {}
+export interface CartItemInterface
+	extends CartItemBaseInterface,
+		CartItemAssociationsInterface {}
 
-type OrderItemAssociations = 'product'
+type CartItemAssociations = 'product'
 
-export class OrderItem extends Model<
-	InferAttributes<OrderItem, { omit: OrderItemAssociations }>,
-	InferCreationAttributes<OrderItem, { omit: OrderItemAssociations }>
+export class CartItem extends Model<
+	InferAttributes<CartItem, { omit: CartItemAssociations }>,
+	InferCreationAttributes<CartItem, { omit: CartItemAssociations }>
 > {
 	declare id: CreationOptional<string>
 
-	declare quantity: number
-	declare price: number
+	declare quantity: CreationOptional<number>
 
 	declare createdAt: CreationOptional<Date>
 	declare updatedAt: CreationOptional<Date>
 	declare deletedAt: CreationOptional<Date>
 
-	// OrderItem belongsTo Product
+	// CartItem belongsTo Product
 	declare product?: NonAttribute<Product>
 	declare getProduct: BelongsToGetAssociationMixin<Product>
 	declare setProduct: BelongsToSetAssociationMixin<Product, string>
 	declare createProduct: BelongsToCreateAssociationMixin<Product>
 
 	declare static associations: {
-		product: Association<OrderItem, Product>
+		product: Association<CartItem, Product>
 	}
 
-	static initModel(sequelize: Sequelize): typeof OrderItem {
-		OrderItem.init(
+	static initModel(sequelize: Sequelize): typeof CartItem {
+		CartItem.init(
 			{
 				id: {
 					type: DataTypes.UUID,
@@ -65,7 +64,7 @@ export class OrderItem extends Model<
 				},
 				quantity: {
 					type: DataTypes.INTEGER,
-					allowNull: false,
+					defaultValue: 1,
 					validate: {
 						isInt: {
 							msg: "Field 'quantity' must be an integer",
@@ -73,15 +72,6 @@ export class OrderItem extends Model<
 						min: {
 							args: [1],
 							msg: "Field 'quantity' must be greater than or equal to 1",
-						},
-					},
-				},
-				price: {
-					type: DataTypes.INTEGER,
-					allowNull: false,
-					validate: {
-						isInt: {
-							msg: 'Field price must be in cents',
 						},
 					},
 				},
@@ -102,22 +92,21 @@ export class OrderItem extends Model<
 			}
 		)
 
-		return OrderItem
+		return CartItem
 	}
 
 	static associate() {
-		// We should not delete this order item entrance on product deletion for order history purposes
-		OrderItem.belongsTo(Product, {
+		CartItem.belongsTo(Product, {
+			as: 'product',
 			foreignKey: 'productId',
-			onDelete: 'SET NULL',
+			onDelete: 'CASCADE',
 		})
 	}
 
-	public async data(dto: boolean = true): Promise<OrderItemInterface> {
+	public async data(dto: boolean = true): Promise<CartItemInterface> {
 		const fields = [
 			'id',
 			'quantity',
-			'price',
 			'createdAt',
 			'updatedAt',
 			...(this.deletedAt ? ['deletedAt'] : []),
@@ -126,9 +115,9 @@ export class OrderItem extends Model<
 		const base_data = fields.reduce((acc, field) => {
 			return {
 				...acc,
-				[field]: this[field as keyof OrderItem],
+				[field]: this[field as keyof CartItem],
 			}
-		}, {}) as OrderItemInterface
+		}, {}) as CartItemInterface
 
 		const [product] = await Promise.all([
 			fetchSingleData<any, Product>(() => this.getProduct(), dto),
@@ -138,14 +127,48 @@ export class OrderItem extends Model<
 			throw new Error('Product not found')
 		}
 
-		const associated_data: OrderItemAssociationsInterface = {
+		const associated_data: CartItemAssociationsInterface = {
 			product,
 		}
 
 		return {
 			...base_data,
 
+			price: await this.getPrice(),
+
 			...associated_data,
 		}
+	}
+
+	public async getPrice(): Promise<number> {
+		const product = await this.getProduct()
+		const activePrice = await product.getActivePrice()
+
+		if (!activePrice) {
+			// throw new Error('Product does not have an active price');
+			return 0
+		}
+
+		const price = activePrice.price * this.quantity
+
+		return price
+	}
+
+	public async addQuantity(quantity: number): Promise<void> {
+		this.quantity += quantity
+
+		if (this.quantity < 1) {
+			this.quantity = 1
+		}
+
+		const product = await this.getProduct()
+
+		if (product?.stock < this.quantity) {
+			this.quantity = product?.stock ?? 1
+
+			throw new Error('Not enough stock')
+		}
+
+		await this.save()
 	}
 }

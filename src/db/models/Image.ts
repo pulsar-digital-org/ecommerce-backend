@@ -17,23 +17,18 @@ import logger from '../../logger'
 import db from '../db'
 import { User, UserInterface } from './User'
 import { removeImageFromBucket } from '../../controllers/image'
+import { BaseModelInterface } from './models'
 
-interface ImageBaseInterface {
-	id: string
-
+interface ImageBaseInterface extends BaseModelInterface {
 	url: string
 
 	active: boolean
 	name: string
 	size: number
-
-	createdAt: Date
-	updatedAt: Date
-	deletedAt?: Date
 }
 
 interface ImageAssociationsInterface {
-	user: any | string
+	user: UserInterface | string
 }
 
 export interface ImageInterface
@@ -62,7 +57,6 @@ export class Image extends Model<
 	declare user?: NonAttribute<User>
 	declare getUser: BelongsToGetAssociationMixin<User>
 	declare setUser: BelongsToSetAssociationMixin<User, string>
-	declare createUser: BelongsToCreateAssociationMixin<User>
 
 	declare static associations: {
 		user: Association<Image, User>
@@ -172,43 +166,5 @@ export class Image extends Model<
 
 			...associated_data,
 		}
-	}
-
-	public async delete(options?: {
-		force?: boolean
-		transaction?: Transaction
-	}): Promise<void> {
-		try {
-			const force = options?.force ?? false
-			const transaction = options?.transaction
-
-			if (force) {
-				if (transaction) {
-					await this.cleanUp({ force, transaction })
-				} else {
-					await db.transaction(async (transaction: Transaction) => {
-						await this.cleanUp({ force, transaction })
-					})
-				}
-			} else {
-				if (transaction) {
-					await this.destroy({ transaction })
-				} else {
-					await db.transaction(async (transaction: Transaction) => {
-						await this.destroy({ transaction })
-					})
-				}
-			}
-		} catch (err: unknown) {
-			logger.error('Delete Address error, ', err)
-			throw err
-		}
-	}
-
-	public async cleanUp(options: {
-		force: boolean
-		transaction: Transaction
-	}): Promise<void> {
-		await this.destroy(options)
 	}
 }

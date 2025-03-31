@@ -25,28 +25,21 @@ import {
 import { Price, PriceInterface } from './Price'
 import { fetchMultiData, fetchSingleData, validateStringField } from '../helper'
 import { OrderItem } from './OrderItem'
-import { Discount, DiscountInterface } from './Discount'
 import { ProductPrice } from './ProductPrice'
 import { Category, CategoryInterface } from './Category'
 import { Image, ImageInterface } from './Image'
+import { BaseModelInterface } from './models'
 
-interface ProductBaseInterface {
-	id: string
-
+interface ProductBaseInterface extends BaseModelInterface {
 	name: string
 	description: string
 	stock: number
-
-	createdAt: Date
-	updatedAt: Date
-	deletedAt?: Date
 }
 
 interface ProductAssociationsInterface {
 	categories: CategoryInterface[] | string[]
 	price?: PriceInterface | string
 	prices: PriceInterface[] | string[]
-	discount?: DiscountInterface | string
 	images: ImageInterface[] | string[]
 	thumbnail?: ImageInterface | string
 }
@@ -56,12 +49,10 @@ export interface ProductInterface
 		ProductAssociationsInterface {}
 
 type ProductAssociations =
-	| 'productPrices'
-	| 'orderItems'
-	| 'discount'
 	| 'categories'
-	| 'thumbnail'
+	| 'productPrices'
 	| 'images'
+	| 'thumbnail'
 
 export class Product extends Model<
 	InferAttributes<Product, { omit: ProductAssociations }>,
@@ -109,25 +100,6 @@ export class Product extends Model<
 	declare hasProductPrices: HasManyHasAssociationsMixin<ProductPrice, string>
 	declare countProductPrices: HasManyCountAssociationsMixin
 
-	// Product hasMany OrderItems
-	declare orderItems?: NonAttribute<OrderItem[]>
-	declare getOrderItems: HasManyGetAssociationsMixin<OrderItem>
-	declare setOrderItems: HasManySetAssociationsMixin<OrderItem, string>
-	declare addOrderItem: HasManyAddAssociationMixin<OrderItem, string>
-	declare addOrderItems: HasManyAddAssociationsMixin<OrderItem, string>
-	declare createOrderItem: HasManyCreateAssociationMixin<OrderItem>
-	declare removeOrderItem: HasManyRemoveAssociationMixin<OrderItem, string>
-	declare removeOrderItems: HasManyRemoveAssociationsMixin<OrderItem, string>
-	declare hasOrderItem: HasManyHasAssociationMixin<OrderItem, string>
-	declare hasOrderItems: HasManyHasAssociationsMixin<OrderItem, string>
-	declare countOrderItems: HasManyCountAssociationsMixin
-
-	// Product belongsTo Discount
-	declare discount?: NonAttribute<Discount>
-	declare getDiscount: BelongsToGetAssociationMixin<Discount>
-	declare setDiscount: BelongsToSetAssociationMixin<Discount, string>
-	declare createDiscount: BelongsToCreateAssociationMixin<Discount>
-
 	declare thumbnail?: NonAttribute<Image>
 	declare getThumbnail: BelongsToGetAssociationMixin<Image>
 	declare setThumbnail: BelongsToSetAssociationMixin<Image, string>
@@ -148,8 +120,6 @@ export class Product extends Model<
 	declare static associations: {
 		categories: Association<Product, Category>
 		productPrices: Association<Product, ProductPrice>
-		orderItems: Association<Product, OrderItem>
-		discount: Association<Product, Discount>
 		thumbnail: Association<Product, Image>
 		images: Association<Product, Image>
 	}
@@ -225,16 +195,6 @@ export class Product extends Model<
 			onDelete: 'CASCADE',
 		})
 
-		Product.hasMany(OrderItem, {
-			foreignKey: 'productId',
-			onDelete: 'CASCADE',
-		})
-
-		Product.belongsTo(Discount, {
-			foreignKey: 'discountId',
-			onDelete: 'SET NULL',
-		})
-
 		Product.belongsTo(Image, {
 			as: 'thumbnail',
 			foreignKey: 'thumbnailId',
@@ -265,30 +225,21 @@ export class Product extends Model<
 			}
 		}, {}) as ProductBaseInterface
 
-		const [categories, price, prices, discount, images, thumbnail] =
-			await Promise.all([
-				fetchMultiData<CategoryInterface, Category>(
-					() => this.getCategories(),
-					dto
-				),
-				fetchSingleData<PriceInterface, Price>(
-					() => this.getActivePrice(),
-					dto
-				),
-				fetchMultiData<PriceInterface, Price>(() => this.getPrices(), dto),
-				fetchSingleData<DiscountInterface, Discount>(
-					() => this.getDiscount(),
-					dto
-				),
-				fetchMultiData<ImageInterface, Image>(() => this.getImages(), dto),
-				fetchSingleData<ImageInterface, Image>(() => this.getThumbnail(), dto),
-			])
+		const [categories, price, prices, images, thumbnail] = await Promise.all([
+			fetchMultiData<CategoryInterface, Category>(
+				() => this.getCategories(),
+				dto
+			),
+			fetchSingleData<PriceInterface, Price>(() => this.getActivePrice(), dto),
+			fetchMultiData<PriceInterface, Price>(() => this.getPrices(), dto),
+			fetchMultiData<ImageInterface, Image>(() => this.getImages(), dto),
+			fetchSingleData<ImageInterface, Image>(() => this.getThumbnail(), dto),
+		])
 
 		const associated_data: ProductAssociationsInterface = {
 			categories,
 			price,
 			prices,
-			discount,
 			images,
 			thumbnail,
 		}

@@ -1,4 +1,4 @@
-import { BaseModelInterface } from './models/models';
+import { ModelIntefaceHelper } from './models/models';
 
 export const validateStringField = (
 	fieldName: string
@@ -14,7 +14,7 @@ export const validateStringField = (
 
 export const fetchSingleData = async <
 	TInterface,
-	TModel extends BaseModelInterface<TInterface>
+	TModel extends ModelIntefaceHelper<TInterface>
 >(
 	association: () => Promise<TModel | null>,
 	dto: boolean
@@ -34,7 +34,7 @@ export const fetchSingleData = async <
 
 export const fetchMultiData = async <
 	TDataInterface,
-	TModel extends BaseModelInterface<TDataInterface>
+	TModel extends ModelIntefaceHelper<TDataInterface>
 >(
 	association: () => Promise<TModel[]>,
 	dto: boolean

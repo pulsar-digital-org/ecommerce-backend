@@ -9,41 +9,41 @@ import {
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
 	NonAttribute,
-	Association
-} from 'sequelize';
-import { Product } from './Product';
-import { Price } from './Price';
+	Association,
+} from 'sequelize'
+import { Product } from './Product'
+import { Price } from './Price'
 
-type ProductPriceAssociations = 'product' | 'price';
+type ProductPriceAssociations = 'product' | 'price'
 
 export class ProductPrice extends Model<
 	InferAttributes<ProductPrice, { omit: ProductPriceAssociations }>,
 	InferCreationAttributes<ProductPrice, { omit: ProductPriceAssociations }>
 > {
-	declare id: CreationOptional<string>;
+	declare id: CreationOptional<string>
 
-	declare isActive: CreationOptional<boolean>;
+	declare isActive: CreationOptional<boolean>
 
-	declare createdAt: CreationOptional<Date>;
-	declare updatedAt: CreationOptional<Date>;
-	declare deletedAt: CreationOptional<Date>;
+	declare createdAt: CreationOptional<Date>
+	declare updatedAt: CreationOptional<Date>
+	declare deletedAt: CreationOptional<Date>
 
 	// ProductPrice belongsTo Product
-	declare product?: NonAttribute<Product>;
-	declare getProduct: BelongsToGetAssociationMixin<Product>;
-	declare setProduct: BelongsToSetAssociationMixin<Product, string>;
-	declare createProduct: BelongsToCreateAssociationMixin<Product>;
+	declare product?: NonAttribute<Product>
+	declare getProduct: BelongsToGetAssociationMixin<Product>
+	declare setProduct: BelongsToSetAssociationMixin<Product, string>
+	declare createProduct: BelongsToCreateAssociationMixin<Product>
 
 	// ProductPrice belongsTo Price
-	declare price?: NonAttribute<Price>;
-	declare getPrice: BelongsToGetAssociationMixin<Price>;
-	declare setPrice: BelongsToSetAssociationMixin<Price, string>;
-	declare createPrice: BelongsToCreateAssociationMixin<Price>;
+	declare price?: NonAttribute<Price>
+	declare getPrice: BelongsToGetAssociationMixin<Price>
+	declare setPrice: BelongsToSetAssociationMixin<Price, string>
+	declare createPrice: BelongsToCreateAssociationMixin<Price>
 
 	declare static associations: {
-		product: Association<Price, Product>;
-		price: Association<Price, Price>;
-	};
+		product: Association<Price, Product>
+		price: Association<Price, Price>
+	}
 
 	static initModel(sequelize: Sequelize): typeof ProductPrice {
 		ProductPrice.init(
@@ -53,42 +53,42 @@ export class ProductPrice extends Model<
 					primaryKey: true,
 					allowNull: false,
 					unique: true,
-					defaultValue: DataTypes.UUIDV4
+					defaultValue: DataTypes.UUIDV4,
 				},
 				isActive: {
 					type: DataTypes.BOOLEAN,
 					allowNull: false,
-					defaultValue: false
+					defaultValue: false,
 				},
 				createdAt: {
-					type: DataTypes.DATE
+					type: DataTypes.DATE,
 				},
 				updatedAt: {
-					type: DataTypes.DATE
+					type: DataTypes.DATE,
 				},
 				deletedAt: {
 					type: DataTypes.DATE,
-					allowNull: true
-				}
+					allowNull: true,
+				},
 			},
 			{
 				sequelize,
-				paranoid: true
+				paranoid: true,
 			}
-		);
+		)
 
-		return ProductPrice;
+		return ProductPrice
 	}
 
 	static associate() {
 		ProductPrice.belongsTo(Product, {
 			foreignKey: 'productId',
-			onDelete: 'CASCADE'
-		});
+			onDelete: 'CASCADE',
+		})
 
 		ProductPrice.belongsTo(Price, {
 			foreignKey: 'priceId',
-			onDelete: 'CASCADE'
-		});
+			onDelete: 'CASCADE',
+		})
 	}
 }
