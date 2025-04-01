@@ -10,8 +10,6 @@ async function categoryCreate(
 ): Promise<CategoryInterface> {
 	const { imageId, parentId, ...categoryData } = data
 
-	console.log(data)
-
 	const image = await imageGet(imageId)
 
 	const category = await db.transaction(async (t: Transaction) => {
@@ -73,7 +71,7 @@ async function categoryGetMultiple(
 				? { [Op.eq]: null }
 				: {
 						[Op.like]: `%${value}%`,
-					},
+				  },
 	}))
 
 	const queryOptions = {
@@ -95,8 +93,6 @@ async function categoryGetMultiple(
 }
 
 async function categoryUpdate(category: Category, data: CategoryModifiable) {
-	console.log('Category update', data)
-
 	const { imageId, parentId, ...categoryData } = data
 
 	category.set({ ...categoryData })

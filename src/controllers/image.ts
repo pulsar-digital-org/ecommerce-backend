@@ -113,7 +113,7 @@ async function removeImageFromBucket(image: Image): Promise<void> {
 
 // todo: add deletion from bucket to hooks in Model
 async function imageDelete(image: Image, force: boolean = false) {
-	await image.delete()
+	await image.destroy()
 }
 
 export { imageCreate, imageGet, removeImageFromBucket, imageDelete }

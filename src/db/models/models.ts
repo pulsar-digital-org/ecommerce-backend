@@ -10,7 +10,10 @@ import { Discount } from './Discount'
 import { Payment } from './Payment'
 import { Category } from './Category'
 import { Image } from './Image'
-import { ProductImage } from './ProductImage'
+import { Cart } from './Cart'
+import { CartItem } from './CartItem'
+import { DiscountCode } from './DiscountCode'
+import { Entity } from './Entity'
 
 export interface ModelIntefaceHelper<TInterface> {
 	data(dto: boolean): Promise<TInterface>
@@ -27,7 +30,13 @@ export interface BaseModelInterface {
 
 export function initModels(sequelize: Sequelize) {
 	Address.initModel(sequelize)
+	Cart.initModel(sequelize)
+	CartItem.initModel(sequelize)
+	Category.initModel(sequelize)
 	Discount.initModel(sequelize)
+	DiscountCode.initModel(sequelize)
+	Entity.initModel(sequelize)
+	Image.initModel(sequelize)
 	Order.initModel(sequelize)
 	OrderItem.initModel(sequelize)
 	Payment.initModel(sequelize)
@@ -35,12 +44,15 @@ export function initModels(sequelize: Sequelize) {
 	Product.initModel(sequelize)
 	ProductPrice.initModel(sequelize)
 	User.initModel(sequelize)
-	Category.initModel(sequelize)
-	Image.initModel(sequelize)
-	ProductImage.initModel(sequelize)
 
 	Address.associate()
+	Cart.associate()
+	CartItem.associate()
+	Category.associate()
 	Discount.associate()
+	DiscountCode.associate()
+	Entity.associate()
+	Image.associate()
 	Order.associate()
 	OrderItem.associate()
 	Payment.associate()
@@ -48,13 +60,16 @@ export function initModels(sequelize: Sequelize) {
 	Product.associate()
 	ProductPrice.associate()
 	User.associate()
-	Category.associate()
-	Image.associate()
-	ProductImage.associate()
 
 	return {
 		Address,
+		Cart,
+		CartItem,
+		Category,
 		Discount,
+		DiscountCode,
+		Entity,
+		Image,
 		Order,
 		OrderItem,
 		Payment,
@@ -62,8 +77,5 @@ export function initModels(sequelize: Sequelize) {
 		Product,
 		ProductPrice,
 		User,
-		Category,
-		Image,
-		ProductImage,
 	}
 }

@@ -8,6 +8,7 @@ import { ProductModifiable } from '../types/product'
 import { categoryGet } from './category'
 import { imageGet } from './image'
 
+// TODO: add the active price for the product
 async function productCreate(
 	data: ProductModifiable
 ): Promise<ProductInterface> {
@@ -27,7 +28,7 @@ async function productCreate(
 	const images = imageIds
 		? await Promise.all(
 				imageIds.map(async (imageId: string) => await imageGet(imageId))
-			)
+		  )
 		: []
 
 	const product = await db.transaction(async (t: Transaction) => {
@@ -65,6 +66,7 @@ async function productDelete(product: Product, force: boolean = false) {
 	await product.destroy()
 }
 
+// TODO: add active price change
 async function productUpdate(
 	product: Product,
 	data: ProductModifiable
@@ -88,7 +90,7 @@ async function productUpdate(
 	const images = imageIds
 		? await Promise.all(
 				imageIds.map(async (imageId: string) => await imageGet(imageId))
-			)
+		  )
 		: []
 
 	const updatedProduct = await db.transaction(async (t: Transaction) => {
@@ -193,22 +195,10 @@ async function productGetMultiple(
 	return { products, total: count, page, size }
 }
 
-// TODO:
-async function productSetActivePrice(product: Product, price: Price) {
-	const updatedProduct = await db.transaction(async (t: Transaction) => {
-		await product.setActivePrice(price, { transaction: t })
-
-		return product
-	})
-
-	return updatedProduct.data()
-}
-
 export {
 	productCreate,
 	productGet,
 	productDelete,
 	productUpdate,
 	productGetMultiple,
-	productSetActivePrice,
 }
