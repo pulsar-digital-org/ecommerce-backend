@@ -17,7 +17,6 @@ import {
 	Model,
 	NonAttribute,
 	Sequelize,
-	Transaction,
 	BelongsToCreateAssociationMixin,
 	BelongsToGetAssociationMixin,
 	BelongsToSetAssociationMixin,
@@ -36,9 +35,7 @@ import {
 	BelongsToManySetAssociationsMixin,
 } from 'sequelize'
 import { OrderItem, OrderItemInterface } from './OrderItem'
-import logger from '../../logger'
-import db from '../db'
-import { AddressType, OrderStatus, orderStatuses } from '../types'
+import { OrderStatus, orderStatuses } from '../types'
 import { User, UserInterface } from './User'
 import { Address, AddressInterface } from './Address'
 import { Payment, PaymentInterface } from './Payment'
@@ -64,7 +61,13 @@ export interface OrderInterface
 	extends OrderBaseInterface,
 		OrderAssociationsInterface {}
 
-type OrderAssociations = 'orderItems' | 'user' | 'addresses'
+type OrderAssociations =
+	| 'orderItems'
+	| 'user'
+	| 'billingAddress'
+	| 'shippingAddress'
+	| 'discount'
+	| 'payment'
 
 export class Order extends Model<
 	InferAttributes<Order, { omit: OrderAssociations }>,
@@ -97,18 +100,17 @@ export class Order extends Model<
 	declare setUser: BelongsToSetAssociationMixin<User, string>
 	declare createUser: BelongsToCreateAssociationMixin<User>
 
-	// Order belongsToMany Addresses
-	declare addresses?: NonAttribute<Address[]>
-	declare getAddresses: BelongsToManyGetAssociationsMixin<Address>
-	declare setAddresses: BelongsToManySetAssociationsMixin<Address, string>
-	declare addAddress: BelongsToManyAddAssociationMixin<Address, string>
-	declare addAddresses: BelongsToManyAddAssociationsMixin<Address, string>
-	declare createAddress: BelongsToManyCreateAssociationMixin<Address>
-	declare removeAddress: BelongsToManyRemoveAssociationMixin<Address, string>
-	declare removeAddresses: BelongsToManyRemoveAssociationsMixin<Address, string>
-	declare hasAddress: BelongsToManyHasAssociationMixin<Address, string>
-	declare hasAddresses: BelongsToManyHasAssociationsMixin<Address, string>
-	declare countAddresses: BelongsToManyCountAssociationsMixin
+	// Order belongsTo BillingAddress
+	declare billingAddress?: NonAttribute<Address>
+	declare getBillingAddress: BelongsToGetAssociationMixin<Address>
+	declare setBillingAddress: BelongsToSetAssociationMixin<Address, string>
+	declare createBillingAddress: BelongsToCreateAssociationMixin<Address>
+
+	// Order belongsTo ShippingAddress
+	declare shippingAddress?: NonAttribute<Address>
+	declare getShippingAddress: BelongsToGetAssociationMixin<Address>
+	declare setShippingAddress: BelongsToSetAssociationMixin<Address, string>
+	declare createShippingAddress: BelongsToCreateAssociationMixin<Address>
 
 	// Order belongsTo DiscountCode
 	declare discount?: NonAttribute<DiscountCode>
@@ -176,8 +178,14 @@ export class Order extends Model<
 			foreignKey: 'userId',
 		})
 
-		Order.belongsToMany(Address, {
-			through: 'OrderAddress',
+		Order.belongsTo(Address, {
+			foreignKey: 'shippingAddressId',
+			as: 'shippingAddress',
+		})
+
+		Order.belongsTo(Address, {
+			foreignKey: 'billingAddressId',
+			as: 'billingAddress',
 		})
 
 		Order.belongsTo(DiscountCode, {
@@ -286,19 +294,5 @@ export class Order extends Model<
 	public async isEmpty(): Promise<boolean> {
 		const order_items = await this.getOrderItems()
 		return order_items.length === 0
-	}
-
-	public async getShippingAddress(): Promise<Address | null> {
-		const addresses = await this.getAddresses()
-		return (
-			addresses.find((address) => address.type === AddressType.shipping) ?? null
-		)
-	}
-
-	public async getBillingAddress(): Promise<Address | null> {
-		const addresses = await this.getAddresses()
-		return (
-			addresses.find((address) => address.type === AddressType.billing) ?? null
-		)
 	}
 }

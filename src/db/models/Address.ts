@@ -1,24 +1,28 @@
 import {
-	Association,
 	CreationOptional,
 	DataTypes,
 	InferCreationAttributes,
 	InferAttributes,
 	Model,
-	NonAttribute,
 	Sequelize,
-	BelongsToCreateAssociationMixin,
-	BelongsToGetAssociationMixin,
-	BelongsToSetAssociationMixin,
+	HasManyAddAssociationMixin,
+	HasManyAddAssociationsMixin,
+	HasManyCountAssociationsMixin,
+	HasManyCreateAssociationMixin,
+	HasManyGetAssociationsMixin,
+	HasManyHasAssociationMixin,
+	HasManyHasAssociationsMixin,
+	HasManyRemoveAssociationMixin,
+	HasManyRemoveAssociationsMixin,
+	HasManySetAssociationsMixin,
+	NonAttribute,
+	Association,
 } from 'sequelize'
-import { fetchSingleData, validateStringField } from '../helper'
-import { AddressType, addressTypes } from '../types'
+import { fetchMultiData, validateStringField } from '../helper'
 import { Entity, EntityInterface } from './Entity'
 import { BaseModelInterface } from './models'
 
 interface AddressBaseInterface extends BaseModelInterface {
-	type: AddressType
-
 	streetName: string
 	streetNumber: string
 	postalCode: string
@@ -27,22 +31,20 @@ interface AddressBaseInterface extends BaseModelInterface {
 }
 
 interface AddressAssociationsInterface {
-	entity: EntityInterface | string
+	entities: EntityInterface[] | string[]
 }
 
 export interface AddressInterface
 	extends AddressBaseInterface,
 		AddressAssociationsInterface {}
 
-type AddressAssociations = 'entity'
+type AddressAssociations = 'entities'
 
 export class Address extends Model<
 	InferAttributes<Address, { omit: AddressAssociations }>,
 	InferCreationAttributes<Address, { omit: AddressAssociations }>
 > {
 	declare id: CreationOptional<string>
-
-	declare type: CreationOptional<AddressType>
 
 	declare streetName: string
 	declare streetNumber: string
@@ -54,14 +56,21 @@ export class Address extends Model<
 	declare updatedAt: CreationOptional<Date>
 	declare deletedAt: CreationOptional<Date>
 
-	// Address belongsTo Entity
-	declare entity?: NonAttribute<Entity>
-	declare getEntity: BelongsToGetAssociationMixin<Entity>
-	declare setEntity: BelongsToSetAssociationMixin<Entity, string>
-	declare createEntity: BelongsToCreateAssociationMixin<Entity>
+	// User hasMany Entities
+	declare entities?: NonAttribute<Entity[]>
+	declare getEntities: HasManyGetAssociationsMixin<Entity>
+	declare setEntities: HasManySetAssociationsMixin<Entity, string>
+	declare addEntity: HasManyAddAssociationMixin<Entity, string>
+	declare addEntities: HasManyAddAssociationsMixin<Entity, string>
+	declare createEntity: HasManyCreateAssociationMixin<Entity>
+	declare removeEntity: HasManyRemoveAssociationMixin<Entity, string>
+	declare removeEntities: HasManyRemoveAssociationsMixin<Entity, string>
+	declare hasEntity: HasManyHasAssociationMixin<Entity, string>
+	declare hasEntities: HasManyHasAssociationsMixin<Entity, string>
+	declare countEntities: HasManyCountAssociationsMixin
 
 	declare static associations: {
-		entity: Association<Address, Entity>
+		entities: Association<Address, Entity>
 	}
 
 	static initModel(sequelize: Sequelize): typeof Address {
@@ -73,14 +82,6 @@ export class Address extends Model<
 					allowNull: false,
 					unique: true,
 					defaultValue: DataTypes.UUIDV4,
-				},
-				type: {
-					type: DataTypes.STRING,
-					allowNull: false,
-					validate: {
-						isIn: [addressTypes],
-					},
-					defaultValue: AddressType.billing,
 				},
 				streetName: {
 					type: DataTypes.STRING,
@@ -153,20 +154,16 @@ export class Address extends Model<
 	}
 
 	static associate() {
-		// Address deps
-
-		Address.belongsTo(Entity, {
-			foreignKey: 'entityId',
+		Entity.hasMany(Address, {
+			foreignKey: 'addressId',
+			as: 'addresses',
 			onDelete: 'CASCADE',
 		})
-
-		// End deps
 	}
 
-	public async data(dto: boolean = true): Promise<AddressInterface> {
+	public async data(): Promise<AddressInterface> {
 		const fields = [
 			'id',
-			'type',
 			'streetName',
 			'streetNumber',
 			'country',
@@ -184,13 +181,11 @@ export class Address extends Model<
 			}
 		}, {}) as AddressBaseInterface
 
-		const [entity] = await Promise.all([
-			fetchSingleData<any, Entity>(() => this.getEntity(), dto),
+		const [entities] = await Promise.all([
+			fetchMultiData<EntityInterface, Entity>(() => this.getEntities(), false),
 		])
 
-		const associated_data: AddressAssociationsInterface = {
-			entity,
-		}
+		const associated_data: AddressAssociationsInterface = { entities }
 
 		return {
 			...base_data,

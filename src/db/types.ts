@@ -15,11 +15,6 @@ export enum UserRole {
 	guest = 'guest',
 }
 
-export enum AddressType {
-	billing = 'billing',
-	shipping = 'shipping',
-}
-
 export enum EntityType {
 	individual = 'individual',
 	business = 'business',
@@ -35,10 +30,6 @@ export const orderStatuses: string[] = Object.values(OrderStatus).filter(
 ) as string[]
 
 export const userRoles: string[] = Object.values(UserRole).filter(
-	(value) => typeof value === 'string'
-) as string[]
-
-export const addressTypes: string[] = Object.values(AddressType).filter(
 	(value) => typeof value === 'string'
 ) as string[]
 

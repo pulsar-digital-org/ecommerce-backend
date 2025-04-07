@@ -24,9 +24,9 @@ import {
 import { Order, OrderInterface } from './Order'
 import { fetchMultiData, fetchSingleData, validateStringField } from '../helper'
 import { UserRole, userRoles } from '../types'
-import { Address, AddressInterface } from './Address'
 import { BaseModelInterface } from './models'
 import { Cart, CartInterface } from './Cart'
+import { Address, AddressInterface } from './Address'
 
 interface UserBaseInterface extends BaseModelInterface {
 	role: UserRole

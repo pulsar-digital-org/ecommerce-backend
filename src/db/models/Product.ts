@@ -24,7 +24,6 @@ import {
 } from 'sequelize'
 import { Price, PriceInterface } from './Price'
 import { fetchMultiData, fetchSingleData, validateStringField } from '../helper'
-import { OrderItem } from './OrderItem'
 import { ProductPrice } from './ProductPrice'
 import { Category, CategoryInterface } from './Category'
 import { Image, ImageInterface } from './Image'

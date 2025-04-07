@@ -143,6 +143,7 @@ export class Entity extends Model<
 			{
 				sequelize,
 				paranoid: true,
+				// check when we have bussiness that we provided the required organization values
 			}
 		)
 
@@ -173,8 +174,12 @@ export class Entity extends Model<
 			}
 		}, {}) as EntityBaseInterface
 
+		const associated_data: EntityAssociationsInterface = {}
+
 		return {
 			...base_data,
+
+			...associated_data,
 		}
 	}
 }
