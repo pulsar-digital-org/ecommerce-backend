@@ -1,13 +1,11 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { Op } from 'sequelize'
 import {
 	addressCreate,
 	addressDelete,
 	addressGet,
 	addressGetMultiple,
 } from '../controllers/address'
-import { Category } from '../db/models/Category'
 import { UnauthorizedError } from '../errors'
 import { authHandler, authSuperHandler } from '../middleware'
 import { addressGetSchema, addressModifiableSchema } from '../types/address'
@@ -41,22 +39,28 @@ const addressRouter = new Hono()
 		c.status(200)
 		return c.json({ address: await address.data() })
 	})
-	.get('', zValidator('query', addressGetSchema), async (c) => {
-		const { pageParam, sizeParam } = c.req.valid('query')
+	.get(
+		'',
+		authSuperHandler,
+		zValidator('query', addressGetSchema),
+		async (c) => {
+			const { pageParam, sizeParam } = c.req.valid('query')
 
-		const { addresses, total, page, size } = await addressGetMultiple(
-			{
-				page: pageParam ? parseInt(pageParam) : undefined,
-				size: sizeParam ? parseInt(sizeParam) : undefined,
-			},
-			{}
-		)
+			const { addresses, total, page, size } = await addressGetMultiple(
+				{
+					page: pageParam ? parseInt(pageParam) : undefined,
+					size: sizeParam ? parseInt(sizeParam) : undefined,
+				},
+				{},
+				[]
+			)
 
-		const hasNextPage = page * size < total
+			const hasNextPage = page * size < total
 
-		c.status(200)
-		return c.json({ items: addresses, hasNextPage })
-	})
+			c.status(200)
+			return c.json({ items: addresses, hasNextPage })
+		}
+	)
 	.delete('/:id', authSuperHandler, async (c) => {
 		const { id: addressId } = c.req.param()
 

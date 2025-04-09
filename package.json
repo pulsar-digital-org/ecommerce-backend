@@ -1,11 +1,12 @@
 {
-	"name": "server",
+	"name": "@repo/server",
 	"version": "1.0.0",
 	"description": "",
 	"types": "dist/app.d.ts",
 	"main": "dist/functions/*.js",
 	"scripts": {
 		"build": "tsc",
+		"dev": "concurrently \"npm run watch\" \"npm run start\"",
 		"watch": "tsc -w",
 		"clean": "rimraf dist && rm -f ./tsconfig.tsbuildinfo",
 		"prestart": "npm run clean && npm run build",

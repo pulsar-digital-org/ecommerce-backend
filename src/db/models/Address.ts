@@ -154,7 +154,7 @@ export class Address extends Model<
 	}
 
 	static associate() {
-		Entity.hasMany(Address, {
+		Address.hasMany(Entity, {
 			foreignKey: 'addressId',
 			as: 'addresses',
 			onDelete: 'CASCADE',

@@ -10,6 +10,9 @@ import {
 import { tokenGet } from '../controllers/auth'
 import { UnauthorizedError } from '../errors'
 import { userModifiableSchema } from '../types/user'
+import { User } from '../db/models/User'
+import { addressGetMultiple } from '../controllers/address'
+import { queryGetMultipleSchema } from '../types/helper'
 
 const usersRouter = new Hono()
 	.post('', async (c) => {
@@ -78,6 +81,36 @@ const usersRouter = new Hono()
 
 			c.status(200)
 			return c.json({ user: updatedUserData })
+		}
+	)
+	.get(
+		':id/addresses',
+		authHandler,
+		zValidator('query', queryGetMultipleSchema),
+		async (c) => {
+			const { id: userId } = c.req.param()
+			const { pageParam, sizeParam } = c.req.valid('query')
+
+			const user = await userGet(userId)
+
+			if (user.id !== c.var.user.id && !c.var.user.isSuperUser())
+				throw new UnauthorizedError(
+					'User is not an admin and cannot get this users addresses'
+				)
+
+			const { addresses, total, page, size } = await addressGetMultiple(
+				{
+					page: pageParam ? parseInt(pageParam) : undefined,
+					size: sizeParam ? parseInt(sizeParam) : undefined,
+				},
+				{ userId: user.id },
+				[]
+			)
+
+			const hasNextPage = page * size < total
+
+			c.status(200)
+			return c.json({ items: addresses, hasNextPage })
 		}
 	)
 

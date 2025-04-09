@@ -1,4 +1,4 @@
-import { Op, Transaction } from 'sequelize'
+import { Includeable, Op, Transaction } from 'sequelize'
 import db from '../db/db'
 import { Address, AddressInterface } from '../db/models/Address'
 import { User } from '../db/models/User'
@@ -9,7 +9,7 @@ async function addressCreate(data: AddressModifiable, user: User) {
 	const address = await db.transaction(async (t: Transaction) => {
 		const address = await Address.create(data, { transaction: t })
 
-		user.addAddress(address, { transaction: t })
+		await user.addAddress(address, { transaction: t })
 
 		return address
 	})
@@ -51,7 +51,8 @@ async function addressUpdate(address: Address, data: AddressModifiable) {
 
 async function addressGetMultiple(
 	options: { page?: number; size?: number } = {},
-	filters: { [key: string]: string | undefined | null } = {}
+	filters: { [key: string]: string | undefined | null } = {},
+	includes: Includeable[]
 ): Promise<{
 	addresses: AddressInterface[]
 	total: number
@@ -74,12 +75,9 @@ async function addressGetMultiple(
 	)
 
 	const conditions = filteredEntries.map(([key, value]) => ({
-		[key]:
-			value === 'null'
-				? { [Op.eq]: null }
-				: {
-						[Op.like]: `%${value}%`,
-				  },
+		[key]: {
+			[Op.like]: `%${value}%`,
+		},
 	}))
 
 	const queryOptions = {
@@ -90,11 +88,12 @@ async function addressGetMultiple(
 
 	const { rows, count } = await Address.findAndCountAll({
 		...queryOptions,
+		include: includes,
 		order: [['createdAt', 'DESC']],
 	})
 
 	const addresses = await Promise.all(
-		rows.map(async (address) => address.data())
+		rows.map(async (address) => await address.data())
 	)
 
 	return { addresses, total: count, page, size }
